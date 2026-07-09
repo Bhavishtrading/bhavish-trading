@@ -4,11 +4,17 @@ import DashboardCard from "./components/DashboardCard";
 import OIAnalysis from "./components/OIAnalysis";
 import MarketScore from "./components/MarketScore";
 import MarketMomentum from "./components/MarketMomentum";
-import { getNiftyData } from "../lib/api";
+async function getMarketData() {
+  const res = await fetch("http://localhost:3000/api/market", {
+    cache: "no-store",
+  });
+
+  return res.json();
+}
 
 export default async function Home() {
 
-  const data = await getNiftyData();
+  const data = await getMarketData();
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">
@@ -54,6 +60,7 @@ export default async function Home() {
           <MarketScore data={data} />
 
           <MarketMomentum data={data} />
+          
 
         </div>
 
