@@ -4,21 +4,16 @@ import DashboardCard from "./components/DashboardCard";
 import OIAnalysis from "./components/OIAnalysis";
 import MarketScore from "./components/MarketScore";
 import MarketMomentum from "./components/MarketMomentum";
-async function getMarketData() {
-  const res = await fetch("http://localhost:3000/api/market", {
-    cache: "no-store",
-  });
 
-  return res.json();
-}
+// Import directly from dataProvider
+import { getMarketData } from "../services/dataProvider";
 
 export default async function Home() {
-
+  // Get data directly (No API Fetch)
   const data = await getMarketData();
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">
-
       <div className="flex">
 
         {/* Sidebar */}
@@ -27,8 +22,10 @@ export default async function Home() {
         {/* Main Content */}
         <div className="flex-1 p-8">
 
+          {/* Header */}
           <Header />
 
+          {/* Dashboard Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
             <DashboardCard
@@ -55,17 +52,17 @@ export default async function Home() {
 
           </div>
 
-         <OIAnalysis data={data} />
+          {/* OI Analysis */}
+          <OIAnalysis data={data} />
 
+          {/* AI Market Score */}
           <MarketScore data={data} />
 
+          {/* Market Momentum */}
           <MarketMomentum data={data} />
-          
 
         </div>
-
       </div>
-
     </main>
   );
 }
