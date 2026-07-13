@@ -31,6 +31,8 @@ export default async function Home() {
             <DashboardCard
               title="NIFTY"
               value={data.nifty}
+              change={(data.nifty - data.close).toFixed(2)}
+  percent={(((data.nifty - data.close) / data.close) * 100).toFixed(2)} 
             />
 
             <DashboardCard

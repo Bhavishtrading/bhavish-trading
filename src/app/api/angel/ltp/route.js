@@ -1,7 +1,6 @@
-import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 import os from "os";
-
-import { getLTP } from "./angel/market";
+import { getLTP } from "@/services/angel/market";
 
 function getLocalIP() {
   const interfaces = os.networkInterfaces();
@@ -17,15 +16,19 @@ function getLocalIP() {
   return "127.0.0.1";
 }
 
-export async function getLiveMarketData() {
+export async function GET(request) {
   try {
-    // Read JWT directly from Cookie
-    const cookieStore = await cookies();
-    const jwtToken = cookieStore.get("jwtToken")?.value;
+   const jwtToken = request.cookies.get("jwtToken")?.value;
 
-    if (!jwtToken) {
-      throw new Error("JWT Cookie Missing");
-    }
+if (!jwtToken) {
+  return NextResponse.json(
+    {
+      success: false,
+      message: "JWT Cookie Missing",
+    },
+    { status: 401 }
+  );
+}
 
     const localIP = getLocalIP();
 
@@ -49,26 +52,19 @@ export async function getLiveMarketData() {
 
     const data = await getLTP(payload, headers);
 
-    if (!data.status) {
-      throw new Error("LTP API Failed");
-    }
+    return NextResponse.json(data);
 
-    return {
-      nifty: data.data.ltp,
-      bankNifty: null,
-      vix: null,
-      close: data.data.close,
-      source: "Angel One",
-    };
   } catch (error) {
-    console.error("Market Adapter Error:", error.message);
+    console.error("LTP Error:", error.response?.data || error.message);
 
-    return {
-      nifty: null,
-      bankNifty: null,
-      vix: null,
-      close: null,
-      source: "Error",
-    };
+    return NextResponse.json(
+      error.response?.data || {
+        success: false,
+        message: error.message,
+      },
+      {
+        status: error.response?.status || 500,
+      }
+    );
   }
 }

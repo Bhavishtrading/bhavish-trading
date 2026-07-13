@@ -2,6 +2,7 @@ export const marketModel = {
   nifty: 0,
   bankNifty: 0,
   vix: 0,
+  close: 0,
 
   status: "",
 

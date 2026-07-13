@@ -21,6 +21,7 @@ export async function getMarketData() {
   data.nifty = live.nifty ?? 24850;
   data.bankNifty = live.bankNifty ?? 56500;
   data.vix = live.vix ?? 12.35;
+  data.close = live.close ?? 23962.8;
 
   data.status = "Bullish";
   data.pcr = 0.96;

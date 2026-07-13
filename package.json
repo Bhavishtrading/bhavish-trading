@@ -10,7 +10,11 @@
   },
   "dependencies": {
     "axios": "^1.18.1",
+    "ip": "^2.0.1",
+    "macaddress": "^0.5.4",
     "next": "16.2.10",
+    "otplib": "^13.4.1",
+    "public-ip": "^8.0.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "yahoo-finance2": "^3.15.4"
