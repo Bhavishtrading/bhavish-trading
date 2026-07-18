@@ -12,10 +12,12 @@ export function generateTrade(data) {
     reasons.push("Price Above Previous Close");
   }
 
-  // EMA Analysis (Dummy values for now)
-  const ema = analyzeEMA(
+  // EMA Analysis 
+ const ema = analyzeEMA(
+  data.nifty,
   data.ema.ema9,
-  data.ema.ema20
+  data.ema.ema20,
+  data.ema.ema50
 );
 
   score += ema.score;

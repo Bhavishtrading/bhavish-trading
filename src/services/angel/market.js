@@ -21,3 +21,13 @@ export async function searchScrip(payload, headers) {
 
   return response.data;
 }
+
+export async function getCandleData(payload, headers) {
+  const response = await axios.post(
+    `${BASE_URL}/rest/secure/angelbroking/historical/v1/getCandleData`,
+    payload,
+    { headers }
+  );
+
+  return response.data;
+}

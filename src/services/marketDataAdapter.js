@@ -1,7 +1,11 @@
 import { cookies } from "next/headers";
 import os from "os";
 
-import { getLTP } from "./angel/market";
+import {
+  getLTP,
+  getCandleData,
+  searchScrip,
+} from "./angel/market";
 
 function getLocalIP() {
   const interfaces = os.networkInterfaces();
@@ -19,7 +23,6 @@ function getLocalIP() {
 
 export async function getLiveMarketData() {
   try {
-    // Read JWT directly from Cookie
     const cookieStore = await cookies();
     const jwtToken = cookieStore.get("jwtToken")?.value;
 
@@ -41,33 +44,70 @@ export async function getLiveMarketData() {
       "X-MACAddress": "14-AC-60-4C-7C-8B",
     };
 
-    const payload = {
-      exchange: "NSE",
-      tradingsymbol: "NIFTY",
-      symboltoken: "26000",
-    };
+    // Search NIFTY
+    const searchResult = await searchScrip(
+      {
+        exchange: "NSE",
+        searchscrip: "NIFTY",
+      },
+      headers
+    );
 
-    const data = await getLTP(payload, headers);
+    console.log("================================");
+    console.log("SEARCH RESULT");
+    console.log(JSON.stringify(searchResult, null, 2));
+    console.log("================================");
 
-    if (!data.status) {
-      throw new Error("LTP API Failed");
-    }
+    // Live LTP
+    const ltpData = await getLTP(
+      {
+        exchange: "NSE",
+        tradingsymbol: "NIFTY",
+        symboltoken: "26000",
+      },
+      headers
+    );
+
+    // Historical
+    const candleData = await getCandleData(
+      {
+        exchange: "NSE",
+        symboltoken: "26000",
+        interval: "FIVE_MINUTE",
+        fromdate: "2026-07-16 09:15",
+        todate: "2026-07-16 15:30",
+      },
+      headers
+    );
+
+    console.log("================================");
+    console.log("LTP");
+    console.log(ltpData);
+
+    console.log("================================");
+    console.log("CANDLE");
+    console.log(candleData);
+    console.log("================================");
 
     return {
-      nifty: data.data.ltp,
+      nifty: ltpData.data?.ltp ?? null,
       bankNifty: null,
       vix: null,
-      close: data.data.close,
+      close: ltpData.data?.close ?? null,
+      candles: candleData.data ?? [],
       source: "Angel One",
     };
   } catch (error) {
-    console.error("Market Adapter Error:", error.message);
+    console.log("================================");
+    console.log(error.response?.data || error.message);
+    console.log("================================");
 
     return {
       nifty: null,
       bankNifty: null,
       vix: null,
       close: null,
+      candles: [],
       source: "Error",
     };
   }

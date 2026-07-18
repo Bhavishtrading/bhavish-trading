@@ -1,10 +1,15 @@
 import { marketModel } from "../lib/marketModel";
 import { getLiveMarketData } from "./marketDataAdapter";
 import { generateTrade } from "./marketEngine";
+import { getYahooMarketData } from "./yahooEngine";
 
 export async function getMarketData() {
   // Live Market Data
   const live = await getLiveMarketData();
+
+  const yahoo = await getYahooMarketData();
+
+console.log("Yahoo Engine:", yahoo);
 
   console.log("Live Adapter:", live);
 
@@ -37,9 +42,16 @@ export async function getMarketData() {
   data.momentum.trend = "Strong Bullish";
   data.momentum.status = "Increasing";
 
-data.ema.ema9 = 24220;
-data.ema.ema20 = 24190;
-data.ema.trend = "Bullish";
+if (yahoo) {
+  data.ema.ema9 = yahoo.ema9;
+  data.ema.ema20 = yahoo.ema20;
+  data.ema.ema50 = yahoo.ema50;
+
+  data.ema.trend =
+    yahoo.ema9 > yahoo.ema20 && yahoo.ema20 > yahoo.ema50
+      ? "Bullish"
+      : "Bearish";
+}
 
   // Generate AI Trade
   const trade = generateTrade(data);
