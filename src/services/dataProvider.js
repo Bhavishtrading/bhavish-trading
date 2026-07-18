@@ -2,6 +2,7 @@ import { marketModel } from "../lib/marketModel";
 import { getLiveMarketData } from "./marketDataAdapter";
 import { generateTrade } from "./marketEngine";
 import { getYahooMarketData } from "./yahooEngine";
+import { generateAISignal } from "./aiEngine";
 
 export async function getMarketData() {
   // Live Market Data (Angel One)
@@ -96,16 +97,22 @@ if (yahoo.atr) {
   // ----------------------------
   // AI Engine
   // ----------------------------
-  const trade = generateTrade(data);
+  const ai = generateAISignal({
+  ema9: data.ema.ema9,
+  ema20: data.ema.ema20,
+  ema50: data.ema.ema50,
+  rsi: data.rsi,
+  macd: data.macd.macd,
+  macdSignal: data.macd.signal,
+  adx: data.adx.adx,
+  atr: data.atr.atr,
+});
 
-  data.ai.signal = trade.signal;
-  data.ai.confidence = trade.confidence;
-  data.ai.risk = trade.risk;
-  data.ai.score = trade.score;
-  data.ai.entry = trade.entry;
-  data.ai.stopLoss = trade.stopLoss;
-  data.ai.target = trade.target;
-  data.ai.reasons = trade.reasons;
+data.ai.signal = ai.signal;
+data.ai.confidence = ai.confidence;
+data.ai.risk = ai.risk;
+data.ai.score = ai.score;
+data.ai.reasons = ai.reasons;
 
   return data;
 }
