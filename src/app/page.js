@@ -6,6 +6,10 @@ import MarketScore from "./components/MarketScore";
 import MarketMomentum from "./components/MarketMomentum";
 import AISignalCard from "./components/AISignalCard";
 import EMATrendCard from "./components/EMATrendCard";
+import RSICard from "./components/RSICard";
+import MACDCard from "./components/MACDCard";
+import ADXCard from "./components/ADXCard";
+import ATRCard from "./components/ATRCard";
 
 // Import directly from dataProvider
 import { getMarketData } from "../services/dataProvider";
@@ -54,7 +58,16 @@ export default async function Home() {
               color="text-green-400"
             />
             <AISignalCard ai={data.ai} />
-            <EMATrendCard ema={data.ema} />
+
+<EMATrendCard ema={data.ema} />
+
+<RSICard rsi={data.rsi} />
+
+<MACDCard macd={data.macd} />
+
+<ADXCard adx={data.adx} />
+
+<ATRCard atr={data.atr} />
 
           </div>
 
