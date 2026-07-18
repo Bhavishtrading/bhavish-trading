@@ -48,12 +48,17 @@ export async function POST(request) {
       "X-ClientPublicIP": localIP,
       "X-MACAddress": "00:00:00:00:00:00",
     };
+console.log("BASE_URL:", process.env.ANGEL_BASE_URL);
+console.log("API_KEY Exists:", !!process.env.ANGEL_API_KEY);
+
 
     const data = await angelLogin(payload, headers);
 
 const response = NextResponse.json(data);
 
 if (data.status === true) {
+    console.log("JWT:", data.data.jwtToken);
+    
   response.cookies.set("jwtToken", data.data.jwtToken, {
     httpOnly: true,
     secure: false, // localhost కోసం

@@ -4,6 +4,8 @@ import DashboardCard from "./components/DashboardCard";
 import OIAnalysis from "./components/OIAnalysis";
 import MarketScore from "./components/MarketScore";
 import MarketMomentum from "./components/MarketMomentum";
+import AISignalCard from "./components/AISignalCard";
+import EMATrendCard from "./components/EMATrendCard";
 
 // Import directly from dataProvider
 import { getMarketData } from "../services/dataProvider";
@@ -51,6 +53,8 @@ export default async function Home() {
               value={`${data.strength}%`}
               color="text-green-400"
             />
+            <AISignalCard ai={data.ai} />
+            <EMATrendCard ema={data.ema} />
 
           </div>
 

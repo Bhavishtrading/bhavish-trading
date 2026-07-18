@@ -29,6 +29,11 @@ export const marketModel = {
     confidence: 0,
     risk: "",
     score: 0,
+
+   entry: 0,
+   stopLoss: 0,
+   target: 0,
+
     reasons: [],
   },
 
@@ -38,4 +43,9 @@ export const marketModel = {
     trend: "",
     status: "",
   },
+  ema: {
+  ema9: 0,
+  ema20: 0,
+  trend: "",
+},
 };

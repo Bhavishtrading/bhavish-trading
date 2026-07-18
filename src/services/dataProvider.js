@@ -1,28 +1,23 @@
 import { marketModel } from "../lib/marketModel";
-import { fetchOptionChain } from "./nseApi";
 import { getLiveMarketData } from "./marketDataAdapter";
+import { generateTrade } from "./marketEngine";
 
 export async function getMarketData() {
-
-  // Future Live Market Data
+  // Live Market Data
   const live = await getLiveMarketData();
 
   console.log("Live Adapter:", live);
 
-  // Future Option Chain Data
-  const optionData = await fetchOptionChain();
-
-  console.log("Option Data:", optionData);
-
-  // Create a copy of the market model
+  // Create a copy of market model
   const data = structuredClone(marketModel);
 
-  // Temporary Dummy Values
+  // Live Data
   data.nifty = live.nifty ?? 24850;
   data.bankNifty = live.bankNifty ?? 56500;
   data.vix = live.vix ?? 12.35;
   data.close = live.close ?? 23962.8;
 
+  // Temporary Values (Later we will replace these with Live APIs)
   data.status = "Bullish";
   data.pcr = 0.96;
   data.strength = 88;
@@ -37,20 +32,27 @@ export async function getMarketData() {
   data.optionChain.highestCallOI = 25000;
   data.optionChain.highestPutOI = 24800;
 
-  data.ai.signal = "BUY CE";
-  data.ai.confidence = 92;
-  data.ai.risk = "Medium";
-  data.ai.score = 95;
-  data.ai.reasons = [
-    "PCR Bullish",
-    "Buying Pressure",
-    "Long Build-up",
-  ];
-
   data.momentum.buying = 82;
   data.momentum.selling = 18;
   data.momentum.trend = "Strong Bullish";
   data.momentum.status = "Increasing";
+
+data.ema.ema9 = 24220;
+data.ema.ema20 = 24190;
+data.ema.trend = "Bullish";
+
+  // Generate AI Trade
+  const trade = generateTrade(data);
+
+  data.ai.signal = trade.signal;
+  data.ai.confidence = trade.confidence;
+  data.ai.risk = trade.risk;
+  data.ai.score = trade.score;
+  data.ai.entry = trade.entry;
+  data.ai.stopLoss = trade.stopLoss;
+  data.ai.target = trade.target;
+
+ data.ai.reasons = trade.reasons;
 
   return data;
 }
