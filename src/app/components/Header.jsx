@@ -1,12 +1,30 @@
-import { getMarketSession } from "../../services/liveMarket";
+"use client";
+
+import { useEffect, useState } from "react";
 
 export default function Header() {
-  const market = getMarketSession();
+  const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNow(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  const day = now.getDay();
+  const minutes = now.getHours() * 60 + now.getMinutes();
+
+  const isOpen =
+    day >= 1 &&
+    day <= 5 &&
+    minutes >= (9 * 60 + 15) &&
+    minutes <= (15 * 60 + 30);
 
   return (
     <header className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8 gap-6">
 
-      {/* Left Side */}
       <div>
         <h1 className="text-4xl font-bold text-blue-400">
           Bhavish Trading
@@ -17,27 +35,28 @@ export default function Header() {
         </p>
       </div>
 
-      {/* Right Side */}
       <div className="flex flex-col items-end">
 
         <div
           className={`px-5 py-2 rounded-xl font-bold shadow-lg ${
-            market.isOpen
+            isOpen
               ? "bg-green-600 text-white"
               : "bg-red-600 text-white"
           }`}
         >
-          ● {market.text}
+          {isOpen ? "🟢 LIVE" : "🔴 MARKET CLOSED"}
         </div>
 
         <div className="mt-4 text-right">
+
           <p className="text-gray-400">
-            {market.date}
+            {now.toLocaleDateString("en-IN")}
           </p>
 
           <p className="text-2xl font-bold text-white">
-            {market.time}
+            {now.toLocaleTimeString("en-IN")}
           </p>
+
         </div>
 
       </div>
