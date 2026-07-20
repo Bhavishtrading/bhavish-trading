@@ -6,36 +6,43 @@ export function generateTrade(data) {
   let score = 0;
   const reasons = [];
 
+  // -----------------------------
   // Price vs Previous Close
+  // -----------------------------
   if (data.nifty > data.close) {
     score += 20;
     reasons.push("Price Above Previous Close");
+  } else {
+    score -= 10;
+    reasons.push("Price Below Previous Close");
   }
 
-  // EMA Analysis 
- const ema = analyzeEMA(
-  data.nifty,
-  data.ema.ema9,
-  data.ema.ema20,
-  data.ema.ema50
-);
+  // -----------------------------
+  // EMA Analysis
+  // -----------------------------
+  const ema = analyzeEMA(
+    data.nifty,
+    data.ema.ema9,
+    data.ema.ema20,
+    data.ema.ema50
+  );
 
   score += ema.score;
   reasons.push(...ema.reasons);
 
-  // PCR Analysis (Dummy values for now)
-  const pcr = calculatePCR(96000, 100000);
-  const pcrSignal = getPCRSignal(pcr);
+  // -----------------------------
+  // PCR Analysis
+  // -----------------------------
+  const pcr = calculatePCR(96000, 100000); // Live values later
 
-  if (pcrSignal === "Bullish") {
-    score += 15;
-    reasons.push("PCR Bullish");
-  } else if (pcrSignal === "Strong Bullish") {
-    score += 20;
-    reasons.push("Strong PCR");
-  }
+  const pcrResult = getPCRSignal(pcr);
 
+  score += pcrResult.score;
+  reasons.push(`PCR : ${pcrResult.signal}`);
+
+  // -----------------------------
   // OI Analysis
+  // -----------------------------
   const oi = analyzeOI(
     data.oi.longBuildUp,
     data.oi.shortBuildUp,
@@ -46,33 +53,50 @@ export function generateTrade(data) {
   score += oi.score;
   reasons.push(...oi.reasons);
 
+  // -----------------------------
   // Market Strength
-  if (data.strength > 80) {
+  // -----------------------------
+  if (data.strength >= 80) {
     score += 20;
-    reasons.push("Strong Market Strength");
+    reasons.push("Strong Market");
+  } else if (data.strength >= 60) {
+    score += 10;
+    reasons.push("Healthy Market");
+  } else {
+    reasons.push("Weak Market");
   }
 
+  // -----------------------------
   // Momentum
+  // -----------------------------
   if (data.momentum.buying > data.momentum.selling) {
     score += 15;
     reasons.push("Buying Momentum");
+  } else if (data.momentum.buying < data.momentum.selling) {
+    score -= 15;
+    reasons.push("Selling Momentum");
   }
 
-  // Limit score
-  score = Math.max(0, Math.min(score, 95));
+  // -----------------------------
+  // Normalize Score
+  // -----------------------------
+  score = Math.max(0, Math.min(score, 100));
 
   let signal = "WAIT";
-  let risk = "High";
+  let risk = "HIGH";
 
   if (score >= 80) {
     signal = "BUY CE";
-    risk = "Low";
+    risk = "LOW";
   } else if (score >= 60) {
     signal = "BUY CE";
-    risk = "Medium";
-  } else if (score <= 35) {
+    risk = "MEDIUM";
+  } else if (score >= 40) {
+    signal = "WAIT";
+    risk = "MEDIUM";
+  } else {
     signal = "BUY PE";
-    risk = "Low";
+    risk = "LOW";
   }
 
   return {
