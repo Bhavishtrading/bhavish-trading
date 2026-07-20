@@ -67,6 +67,9 @@ export async function getLiveMarketData() {
       },
       headers
     );
+    console.log("========== LTP RESPONSE ==========");
+console.log(JSON.stringify(ltpData, null, 2));
+console.log("==================================");
 
     // Historical
     const candleData = await getCandleData(

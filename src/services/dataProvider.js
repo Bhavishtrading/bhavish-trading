@@ -1,7 +1,7 @@
 import { marketModel } from "../lib/marketModel";
 import { getLiveMarketData } from "./marketDataAdapter";
 import { generateTrade } from "./marketEngine";
-import { getYahooMarketData } from "./yahooEngine";
+// import { getYahooMarketData } from "./yahooEngine";
 import { generateAISignal } from "./aiEngine";
 
 export async function getMarketData() {
@@ -9,7 +9,7 @@ export async function getMarketData() {
   const live = await getLiveMarketData();
 
   // Yahoo Finance Data
-  const yahoo = await getYahooMarketData();
+  const yahoo = null;
 
   console.log("Live Adapter:", live);
   console.log("Yahoo Engine:", yahoo);
@@ -20,10 +20,10 @@ export async function getMarketData() {
   // ----------------------------
   // Live Price
   // ----------------------------
-  data.nifty = live?.nifty ?? 24850;
-  data.bankNifty = live?.bankNifty ?? 56500;
-  data.vix = live?.vix ?? 12.35;
-  data.close = live?.close ?? 23962.8;
+  data.nifty = live?.nifty;
+ data.bankNifty = live?.bankNifty;
+data.vix = live?.vix;
+data.close = live?.close;
 
   // ----------------------------
   // Temporary Data

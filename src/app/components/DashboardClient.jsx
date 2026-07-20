@@ -26,7 +26,10 @@ export default function DashboardClient() {
 
       const result = await response.json();
 
-      setData(result);
+     setData((prev) => ({
+  ...prev,
+  ...result,
+}));
     } catch (error) {
       console.error("Dashboard Error:", error);
     }
