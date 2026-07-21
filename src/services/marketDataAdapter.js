@@ -3,6 +3,7 @@ import os from "os";
 
 import {
   getLTP,
+  getFullQuote,
   getCandleData,
   searchScrip,
 } from "./angel/market";
@@ -21,8 +22,15 @@ function getLocalIP() {
   return "127.0.0.1";
 }
 
+console.log("MARKET DATA ADAPTER LOADED");
 export async function getLiveMarketData() {
+  
+  console.log("############################################");
+  console.log("NEW MARKET DATA ADAPTER VERSION");
+  console.log(new Date().toISOString());
+  console.log("############################################");
   try {
+    console.log("***** MARKET ADAPTER FILE EXECUTED *****");
     const cookieStore = await cookies();
     const jwtToken = cookieStore.get("jwtToken")?.value;
 
@@ -52,23 +60,93 @@ export async function getLiveMarketData() {
       },
       headers
     );
+    console.log("===== SEARCH RESULT START =====");
+console.log(JSON.stringify(searchResult, null, 2));
+console.log("===== SEARCH RESULT END =====");
 
+// ఇక్కడే return వేయి
+console.log("TOTAL RECORDS:", searchResult.data.length);
+
+searchResult.data.slice(0, 10).forEach((item, index) => {
+  console.log("================================");
+  console.log("INDEX:", index);
+  console.log(JSON.stringify(item, null, 2));
+});
+    console.log("Search Result Status:", searchResult.status);
+console.log("Search Result Keys:", Object.keys(searchResult));
+
+console.log("Search Result Data Type:", typeof searchResult.data);
+console.log("Is Array:", Array.isArray(searchResult.data));
+console.log("Data Length:", searchResult.data?.length);
+
+if (searchResult.data?.length > 0) {
+  console.log("First Record:");
+  console.log(searchResult.data[0]);
+}
+
+ console.log("========== OPTION SEARCH ==========");
+const options = searchResult.data.filter(
+  item =>
+    item.tradingsymbol.includes("CE") ||
+    item.tradingsymbol.includes("PE")
+);
+
+console.log("Total Options:", options.length);
+
+console.log("========== FIRST 10 OPTIONS ==========");
+
+options.slice(0, 10).forEach((item, index) => {
+  console.log(index + 1, {
+    tradingsymbol: item.tradingsymbol,
+    symboltoken: item.symboltoken,
+    exchange: item.exchange,
+  });
+});
+
+console.log("======================================");
+console.log("==================================");   
     console.log("================================");
     console.log("SEARCH RESULT");
     console.log(JSON.stringify(searchResult, null, 2));
     console.log("================================");
 
     // Live LTP
-    const ltpData = await getLTP(
-      {
-        exchange: "NSE",
-        tradingsymbol: "NIFTY",
-        symboltoken: "26000",
-      },
-      headers
-    );
-    console.log("========== LTP RESPONSE ==========");
-console.log(JSON.stringify(ltpData, null, 2));
+const ltpData = await getLTP(
+  {
+    exchange: "NSE",
+    tradingsymbol: "NIFTY",
+    symboltoken: "26000",
+  },
+  headers
+);
+
+console.log("Calling Full Quote...");
+
+const fullQuote = await getFullQuote(
+  {
+    mode: "FULL",
+    exchangeTokens: {
+      NSE: ["26000"],
+    },
+  },
+  headers
+);
+
+console.log("Full Quote Success");
+console.log("========== FULL QUOTE ==========");
+console.log(JSON.stringify(fullQuote, null, 2));
+console.log("================================");
+
+console.log("========== LTP RESPONSE ==========");
+const quote = fullQuote.data?.fetched?.[0];
+
+console.log({
+  ltp: quote?.ltp,
+  openInterest: quote?.openInterest,
+  tradeVolume: quote?.tradeVolume,
+  totalBuyQuantity: quote?.totalBuyQuantity,
+  totalSellQuantity: quote?.totalSellQuantity,
+});
 console.log("==================================");
 
     // Historical

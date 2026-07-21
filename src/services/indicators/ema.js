@@ -3,11 +3,18 @@ export function calculateEMA(prices, period) {
     return null;
   }
 
+  // Initial SMA
+  let sum = 0;
+  for (let i = 0; i < period; i++) {
+    sum += prices[i];
+  }
+
+  let ema = sum / period;
+
   const multiplier = 2 / (period + 1);
 
-  let ema = prices[0];
-
-  for (let i = 1; i < prices.length; i++) {
+  // EMA calculation
+  for (let i = period; i < prices.length; i++) {
     ema = (prices[i] - ema) * multiplier + ema;
   }
 
@@ -15,7 +22,9 @@ export function calculateEMA(prices, period) {
 }
 
 export function getEMAValues(quotes) {
-  const closes = quotes.map((q) => q.close);
+  const closes = quotes
+    .map((q) => Number(q.close))
+    .filter((v) => Number.isFinite(v));
 
   return {
     ema9: calculateEMA(closes, 9),

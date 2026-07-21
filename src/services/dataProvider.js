@@ -1,18 +1,21 @@
 import { marketModel } from "../lib/marketModel";
 import { getLiveMarketData } from "./marketDataAdapter";
 import { generateTrade } from "./marketEngine";
-// import { getYahooMarketData } from "./yahooEngine";
+import { getYahooMarketData } from "./yahooEngine";
 import { generateAISignal } from "./aiEngine";
 
 export async function getMarketData() {
-  // Live Market Data (Angel One)
+  console.log("==================================");
+  console.log("📊 getMarketData Started");
+console.log("Market Adapter Path:", require.resolve("./marketDataAdapter"));
+
   const live = await getLiveMarketData();
 
-  // Yahoo Finance Data
-  const yahoo = null;
+  const yahoo = await getYahooMarketData();
 
   console.log("Live Adapter:", live);
   console.log("Yahoo Engine:", yahoo);
+;
 
   // Clone Market Model
   const data = structuredClone(marketModel);
@@ -55,10 +58,22 @@ data.close = live?.close;
     data.ema.ema20 = yahoo.ema20;
     data.ema.ema50 = yahoo.ema50;
 
-    data.ema.trend =
-      yahoo.ema9 > yahoo.ema20 && yahoo.ema20 > yahoo.ema50
-        ? "Bullish"
-        : "Bearish";
+   // EMA Trend Logic
+if (
+  live?.nifty > yahoo.ema9 &&
+  yahoo.ema9 > yahoo.ema20 &&
+  yahoo.ema20 > yahoo.ema50
+) {
+  data.ema.trend = "Bullish";
+} else if (
+  live?.nifty < yahoo.ema9 &&
+  yahoo.ema9 < yahoo.ema20 &&
+  yahoo.ema20 < yahoo.ema50
+) {
+  data.ema.trend = "Bearish";
+} else {
+  data.ema.trend = "Sideways";
+}
 
     // RSI
     data.rsi = yahoo.rsi ?? 0;
@@ -98,12 +113,17 @@ if (yahoo.atr) {
   // AI Engine
   // ----------------------------
   const ai = generateAISignal({
+  price: data.nifty,
+
   ema9: data.ema.ema9,
   ema20: data.ema.ema20,
   ema50: data.ema.ema50,
+
   rsi: data.rsi,
+
   macd: data.macd.macd,
   macdSignal: data.macd.signal,
+
   adx: data.adx.adx,
   atr: data.atr.atr,
 });

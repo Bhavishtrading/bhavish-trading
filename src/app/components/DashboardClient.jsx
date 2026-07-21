@@ -1,19 +1,15 @@
 "use client";
-
+import AISignalCard from "./AISignalCard";
 import { useEffect, useState } from "react";
-
+import EMATrendCard from "./EMATrendCard";
 import Header from "./Header";
 import Sidebar from "./Sidebar";
 import DashboardCard from "./DashboardCard";
-import OIAnalysis from "./OIAnalysis";
-import MarketScore from "./MarketScore";
-import MarketMomentum from "./MarketMomentum";
-import AISignalCard from "./AISignalCard";
-import EMATrendCard from "./EMATrendCard";
 import RSICard from "./RSICard";
 import MACDCard from "./MACDCard";
 import ADXCard from "./ADXCard";
 import ATRCard from "./ATRCard";
+import OIAnalysis from "./OIAnalysis";
 
 export default function DashboardClient() {
   const [data, setData] = useState(null);
@@ -24,12 +20,17 @@ export default function DashboardClient() {
         cache: "no-store",
       });
 
+      console.log("Status:", response.status);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
       const result = await response.json();
 
-     setData((prev) => ({
-  ...prev,
-  ...result,
-}));
+      console.log("API Result:", result);
+
+      setData(result);
     } catch (error) {
       console.error("Dashboard Error:", error);
     }
@@ -56,64 +57,63 @@ export default function DashboardClient() {
   return (
     <main className="min-h-screen bg-slate-950 text-white">
       <div className="flex">
-
         <Sidebar />
 
         <div className="flex-1 p-8">
-
           <Header />
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-
             <DashboardCard
               title="NIFTY"
-              value={data.nifty}
-              change={(data.nifty - data.close).toFixed(2)}
-              percent={(
-                ((data.nifty - data.close) / data.close) *
-                100
-              ).toFixed(2)}
+              value={data.nifty ?? "-"}
+              change={
+                data.close
+                  ? (data.nifty - data.close).toFixed(2)
+                  : "-"
+              }
+              percent={
+                data.close
+                  ? (
+                      ((data.nifty - data.close) / data.close) *
+                      100
+                    ).toFixed(2)
+                  : "-"
+              }
             />
 
             <DashboardCard
               title="Market Status"
-              value={data.status}
+              value={data.status ?? "-"}
               color="text-green-400"
             />
+            <AISignalCard ai={data.ai} />
+            <EMATrendCard ema={data.ema} />
+            <RSICard rsi={data.rsi} />
+            <MACDCard macd={data.macd} />
+            <ADXCard adx={data.adx} />
+            <ATRCard atr={data.atr} />
 
             <DashboardCard
               title="PCR"
-              value={data.pcr}
+              value={data.pcr ?? "-"}
             />
 
             <DashboardCard
               title="Market Strength"
-              value={`${data.strength}%`}
+              value={
+                data.strength
+                  ? `${data.strength}%`
+                  : "-"
+              }
               color="text-green-400"
             />
-
-            <AISignalCard ai={data.ai} />
-
-            <EMATrendCard ema={data.ema} />
-
-            <RSICard rsi={data.rsi} />
-
-            <MACDCard macd={data.macd} />
-
-            <ADXCard adx={data.adx} />
-
-            <ATRCard atr={data.atr} />
-
           </div>
+   <div className="bg-green-600 text-white p-10 mt-8">
+  FROM DASHBOARDCLIENT
+</div>
 
-          <OIAnalysis data={data} />
-
-          <MarketScore data={data} />
-
-          <MarketMomentum data={data} />
-
+<OIAnalysis />
         </div>
-
       </div>
     </main>
   );

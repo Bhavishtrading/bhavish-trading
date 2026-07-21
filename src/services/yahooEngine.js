@@ -7,12 +7,16 @@ import { calculateATR } from "./indicators/atr";
 
 const yahooFinance = new YahooFinance();
 
+console.log("Yahoo Engine Started...");
+
 export async function getYahooMarketData() {
   try {
     const result = await yahooFinance.chart("^NSEI", {
       period1: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
       interval: "5m",
     });
+    console.log("Yahoo Result Received");
+console.log(result.meta);
 
     const quotes = result.quotes || [];
 

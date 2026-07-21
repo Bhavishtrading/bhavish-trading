@@ -31,3 +31,12 @@ export async function getCandleData(payload, headers) {
 
   return response.data;
 }
+export async function getFullQuote(payload, headers) {
+  const response = await axios.post(
+    `${BASE_URL}/rest/secure/angelbroking/market/v1/quote/`,
+    payload,
+    { headers }
+  );
+
+  return response.data;
+}

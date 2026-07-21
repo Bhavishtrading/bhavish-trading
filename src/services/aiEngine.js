@@ -2,22 +2,26 @@ export function generateAISignal(marketData) {
   let score = 0;
   const reasons = [];
 
-  // --------------------------
-  // EMA Trend (20 Marks)
-  // --------------------------
-  if (
-    marketData.ema9 > marketData.ema20 &&
-    marketData.ema20 > marketData.ema50
-  ) {
-    score += 20;
-    reasons.push("Strong EMA Bullish Trend");
-  } else if (
-    marketData.ema9 < marketData.ema20 &&
-    marketData.ema20 < marketData.ema50
-  ) {
-    score -= 20;
-    reasons.push("Strong EMA Bearish Trend");
-  }
+ // --------------------------
+// EMA + Price Trend (20 Marks)
+// --------------------------
+if (
+  marketData.price > marketData.ema9 &&
+  marketData.ema9 > marketData.ema20 &&
+  marketData.ema20 > marketData.ema50
+) {
+  score += 20;
+  reasons.push("Strong Bullish Trend");
+} else if (
+  marketData.price < marketData.ema9 &&
+  marketData.ema9 < marketData.ema20 &&
+  marketData.ema20 < marketData.ema50
+) {
+  score -= 20;
+  reasons.push("Strong Bearish Trend");
+} else {
+  reasons.push("Sideways / Mixed Trend");
+}
 
   // --------------------------
   // RSI (15 Marks)
@@ -31,16 +35,34 @@ export function generateAISignal(marketData) {
   }
 
   // --------------------------
-  // MACD (20 Marks)
   // --------------------------
-  if (marketData.macd > marketData.macdSignal) {
+// MACD (20 Marks)
+// --------------------------
+const bullishTrend =
+  marketData.price > marketData.ema9 &&
+  marketData.ema9 > marketData.ema20 &&
+  marketData.ema20 > marketData.ema50;
+
+const bearishTrend =
+  marketData.price < marketData.ema9 &&
+  marketData.ema9 < marketData.ema20 &&
+  marketData.ema20 < marketData.ema50;
+
+if (marketData.macd > marketData.macdSignal) {
+  if (bullishTrend) {
     score += 20;
     reasons.push("MACD Bullish Crossover");
   } else {
+    reasons.push("Bullish MACD (Trend Not Confirmed)");
+  }
+} else {
+  if (bearishTrend) {
     score -= 20;
     reasons.push("MACD Bearish");
+  } else {
+    reasons.push("Bearish MACD (Trend Not Confirmed)");
   }
-
+}
   // --------------------------
   // ADX (15 Marks)
   // --------------------------
