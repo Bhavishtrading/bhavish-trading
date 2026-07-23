@@ -8,22 +8,32 @@ export async function GET() {
 
     const data = await getMarketData();
 
+    console.log("==================================");
     console.log("✅ Market Data Generated");
     console.log(JSON.stringify(data, null, 2));
-
     console.log("==================================");
 
     return NextResponse.json(data);
   } catch (error) {
+    console.error("==================================");
     console.error("❌ API MARKET ERROR");
-    console.error(error);
+    console.error("Name:", error?.name);
+    console.error("Message:", error?.message);
+    console.error("Stack:");
+    console.error(error?.stack);
+    console.error("Full Error:");
+    console.dir(error, { depth: null });
+    console.error("==================================");
 
     return NextResponse.json(
       {
         success: false,
-        message: error.message,
+        error: error?.name || "UnknownError",
+        message: error?.message || "Unknown Error",
       },
-      { status: 500 }
+      {
+        status: 500,
+      }
     );
   }
 }

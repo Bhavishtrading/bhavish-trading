@@ -10,6 +10,8 @@ import MACDCard from "./MACDCard";
 import ADXCard from "./ADXCard";
 import ATRCard from "./ATRCard";
 import OIAnalysis from "./OIAnalysis";
+import AITradePanel from "./AITradePanel";
+import LiveOptionChain from "./LiveOptionChain";
 
 export default function DashboardClient() {
   const [data, setData] = useState(null);
@@ -108,11 +110,10 @@ export default function DashboardClient() {
               color="text-green-400"
             />
           </div>
-   <div className="bg-green-600 text-white p-10 mt-8">
-  FROM DASHBOARDCLIENT
-</div>
-
-<OIAnalysis />
+   
+<AITradePanel ai={data.ai} />
+<LiveOptionChain optionChain={data.optionChain} />
+<OIAnalysis data={data} />
         </div>
       </div>
     </main>

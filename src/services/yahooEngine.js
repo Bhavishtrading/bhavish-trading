@@ -1,9 +1,5 @@
 import YahooFinance from "yahoo-finance2";
-import { getEMAValues } from "./indicators/ema";
-import { calculateRSI } from "./indicators/rsi";
-import { calculateMACD } from "./indicators/macd";
-import { calculateADX } from "./indicators/adx";
-import { calculateATR } from "./indicators/atr";
+import { calculateIndicators } from "./indicators";
 
 const yahooFinance = new YahooFinance();
 
@@ -15,8 +11,9 @@ export async function getYahooMarketData() {
       period1: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
       interval: "5m",
     });
+
     console.log("Yahoo Result Received");
-console.log(result.meta);
+    console.log(result.meta);
 
     const quotes = result.quotes || [];
 
@@ -26,19 +23,23 @@ console.log(result.meta);
 
     const last = quotes[quotes.length - 1];
 
+    const indicators = calculateIndicators(quotes);
+
     return {
       nifty: last.close,
       candleTime: last.date,
 
-      ...getEMAValues(quotes),
+      ema9: indicators.ema9,
+      ema20: indicators.ema20,
+      ema50: indicators.ema50,
 
-      rsi: calculateRSI(quotes),
+      rsi: indicators.rsi,
 
-      macd: calculateMACD(quotes),
+      macd: indicators.macd,
 
-      adx: calculateADX(quotes),
+      adx: indicators.adx,
 
-      atr: calculateATR(quotes),
+      atr: indicators.atr,
 
       quotes,
     };

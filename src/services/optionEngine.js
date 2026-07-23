@@ -1,49 +1,79 @@
-export function analyzeOptionChain(optionChain = {}) {
-  const calls = optionChain.calls || [];
-  const puts = optionChain.puts || [];
+import { getNiftyOptions } from "./zerodha/instruments";
 
-  // Highest Call OI
-  let highestCallOI = {
-    strike: 0,
-    oi: 0,
-  };
+export async function getOptionChain(spotPrice, range = 2) {
+  const options = await getNiftyOptions();
 
-  // Highest Put OI
-  let highestPutOI = {
-    strike: 0,
-    oi: 0,
-  };
-
-  // Find Highest Call OI
-  for (const call of calls) {
-    if ((call.oi || 0) > highestCallOI.oi) {
-      highestCallOI = {
-        strike: call.strikePrice,
-        oi: call.oi,
-      };
-    }
+  if (!options.length) {
+    throw new Error("No NIFTY option contracts found.");
   }
 
-  // Find Highest Put OI
-  for (const put of puts) {
-    if ((put.oi || 0) > highestPutOI.oi) {
-      highestPutOI = {
-        strike: put.strikePrice,
-        oi: put.oi,
-      };
-    }
+  // ATM Strike
+  const atmStrike = Math.round(spotPrice / 50) * 50;
+
+  // Nearest Expiry
+  const expiries = [
+    ...new Set(options.map((o) => new Date(o.expiry).getTime())),
+  ].sort((a, b) => a - b);
+
+  const nearestExpiry = expiries[0];
+
+  const expiryOptions = options.filter(
+    (o) => new Date(o.expiry).getTime() === nearestExpiry
+  );
+
+  const strikes = [];
+
+  for (let i = -range; i <= range; i++) {
+    strikes.push(atmStrike + i * 50);
   }
+
+  const chain = strikes.map((strike) => {
+    const ce = expiryOptions.find(
+      (o) =>
+        o.strike === strike &&
+        o.instrument_type === "CE"
+    );
+
+    const pe = expiryOptions.find(
+      (o) =>
+        o.strike === strike &&
+        o.instrument_type === "PE"
+    );
+
+    return {
+      strike,
+      ce,
+      pe,
+    };
+  });
+
+  console.log("==================================");
+  console.log("Nearest Expiry:", new Date(nearestExpiry));
+  console.log("ATM:", atmStrike);
+  console.table(
+    chain.map((x) => ({
+      Strike: x.strike,
+      CE: x.ce?.tradingsymbol,
+      PE: x.pe?.tradingsymbol,
+    }))
+  );
+  console.log("==================================");
 
   return {
-    atm: optionChain.atm || 0,
-    maxPain: optionChain.maxPain || 0,
+    atm: atmStrike,
+    expiry: new Date(nearestExpiry),
+    chain,
+  };
+}
 
-    highestCallOI: highestCallOI.strike,
-    highestPutOI: highestPutOI.strike,
+// Backward Compatibility
+export async function getATMOptions(spotPrice) {
+  const data = await getOptionChain(spotPrice, 0);
 
-    longBuildUp: 0,
-    shortBuildUp: 0,
-    shortCovering: 0,
-    longUnwinding: 0,
+  return {
+    atm: data.atm,
+    expiry: data.expiry,
+    ce: data.chain[0].ce,
+    pe: data.chain[0].pe,
   };
 }
