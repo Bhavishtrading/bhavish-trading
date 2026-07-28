@@ -12,6 +12,8 @@ import ATRCard from "./ATRCard";
 import OIAnalysis from "./OIAnalysis";
 import AITradePanel from "./AITradePanel";
 import LiveOptionChain from "./LiveOptionChain";
+import OILeaders from "./OILeaders";
+import MarketBiasCard from "./MarketBiasCard";
 
 export default function DashboardClient() {
   const [data, setData] = useState(null);
@@ -111,9 +113,21 @@ export default function DashboardClient() {
             />
           </div>
    
-<AITradePanel ai={data.ai} />
-<LiveOptionChain optionChain={data.optionChain} />
-<OIAnalysis data={data} />
+<div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+  <AITradePanel ai={data.ai} />
+
+  <OILeaders data={data} />
+
+  <MarketBiasCard bias={data.marketBias} />
+</div>
+
+<div className="mt-6">
+  <LiveOptionChain optionChain={data.optionChain} />
+</div>
+
+<div className="mt-6">
+  <OIAnalysis data={data} />
+</div>
         </div>
       </div>
     </main>

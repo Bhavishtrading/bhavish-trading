@@ -22,12 +22,42 @@ export const marketModel = {
     longUnwinding: 0,
   },
 
+  // OI Trend Summary
+  oiTrend: {
+    bullish: 0,
+    bearish: 0,
+    neutral: 0,
+  },
+    // OI Leaders
+  oiLeaders: {
+    callWriting: null,
+    putWriting: null,
+    callUnwinding: null,
+    putUnwinding: null,
+  },
+
+  // Market Structure
+  marketStructure: {
+    trend: "",
+    support: 0,
+    resistance: 0,
+  },
+
+  // Market Bias
+  marketBias: {
+    signal: "",
+    confidence: 0,
+    reasons: [],
+  },
+
   // Option Chain
   optionChain: {
     atm: 0,
+    expiry: "",
     maxPain: 0,
     highestCallOI: 0,
     highestPutOI: 0,
+    chain: [],
   },
 
   // AI Trading Signal
@@ -62,16 +92,20 @@ export const marketModel = {
     histogram: 0,
     trend: "",
   },
+
+  // ADX
   adx: {
-  adx: 0,
-  plusDI: 0,
-  minusDI: 0,
-  trend: "",
-},
-atr: {
-  atr: 0,
-  volatility: "",
-},
+    adx: 0,
+    plusDI: 0,
+    minusDI: 0,
+    trend: "",
+  },
+
+  // ATR
+  atr: {
+    atr: 0,
+    volatility: "",
+  },
 
   // EMA
   ema: {

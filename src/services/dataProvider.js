@@ -1,14 +1,20 @@
 import { marketModel } from "../lib/marketModel";
 import { getLiveMarketData } from "./marketDataAdapter";
-import { testInstruments } from "./zerodha/market";
 import { getYahooMarketData } from "./yahooEngine";
+
 import { generateAISignal } from "./aiEngine";
+
 import { getLiveOptionData } from "./liveOptionEngine";
 import { analyzeOptionChain } from "./optionAnalyzer";
+
 import { calculateOIChange } from "./oiChangeEngine";
 import { classifyOIChanges } from "./oiClassifier";
+
 import { analyzeMarketStructure } from "./marketStructure";
 import { analyzeMarketBias } from "./marketBias";
+
+import { analyzeOITrend } from "./oiTrendEngine";
+import { analyzeOILeaders } from "./oiLeaders";
 
 import {
   addSnapshot,
@@ -39,9 +45,16 @@ export async function getMarketData() {
   let classifiedSignals = [];
   let marketStructure = null;
   let marketBias = null;
+  let oiTrend = [];
 
   try {
     optionData = await getLiveOptionData(live.nifty);
+
+    // =========================================
+// Snapshot Compare
+// =========================================
+
+
 
     optionAnalysis = analyzeOptionChain(optionData.chain);
     marketStructure = analyzeMarketStructure(optionData.chain);
@@ -67,10 +80,28 @@ console.table(marketStructure);
   const previousSnapshot = getPreviousSnapshot();
 
   // Existing Signal Analysis
-  oiSignals = analyzeOIChange(
-    previousSnapshot,
-    optionData.chain
-  );
+ oiSignals = analyzeOIChange(
+  previousSnapshot,
+  optionData.chain
+);
+console.log("========== SNAPSHOT TEST ==========");
+
+const oldATM = previousSnapshot.find(
+  (x) => x.strike === optionData.atm
+);
+
+const newATM = optionData.chain.find(
+  (x) => x.strike === optionData.atm
+);
+
+console.log({
+  strike: optionData.atm,
+  oldCE: oldATM?.ce?.oi,
+  newCE: newATM?.ce?.oi,
+  oldPE: oldATM?.pe?.oi,
+  newPE: newATM?.pe?.oi,
+});
+
   console.log("OI SIGNALS RAW:");
 console.dir(oiSignals, { depth: null });
 
@@ -83,10 +114,55 @@ console.dir(oiSignals, { depth: null });
   );
 
   // NEW OI Change Engine
-  const oiChanges = calculateOIChange(
-    previousSnapshot,
-    optionData.chain
+ const oiChanges = calculateOIChange(
+  previousSnapshot,
+  optionData.chain
+);
+console.log("========== OI CHANGES ==========");
+
+console.table(
+  oiChanges.map((x) => ({
+    Strike: x.strike,
+    CE: x.ce?.oiDiff,
+    PE: x.pe?.oiDiff,
+  }))
+);
+
+// Merge OI Change into Option Chain
+for (const change of oiChanges) {
+  const row = optionData.chain.find(
+    (x) => x.strike === change.strike
   );
+  console.log("========== AFTER MERGE ==========");
+
+console.table(
+  optionData.chain.map((x) => ({
+    Strike: x.strike,
+    CE: x.ce?.oiChange,
+    PE: x.pe?.oiChange,
+  }))
+);
+
+  if (!row) continue;
+
+  if (row.ce) {
+    row.ce.oiChange = change.ce.oiDiff;
+  }
+
+  if (row.pe) {
+    row.pe.oiChange = change.pe.oiDiff;
+  }
+}
+
+console.log("===== OPTION CHAIN AFTER MERGE =====");
+
+console.table(
+  optionData.chain.map((x) => ({
+    Strike: x.strike,
+    CE_OI_CHANGE: x.ce?.oiChange,
+    PE_OI_CHANGE: x.pe?.oiChange,
+  }))
+);
 
   console.log("==================================");
   console.log("OI CHANGE ENGINE");
@@ -107,6 +183,19 @@ console.dir(classifiedSignals, { depth: null });
 console.log("==================================");
 console.log("OI CLASSIFIER");
 
+console.log("==================================");
+console.log("OI TREND");
+
+console.table(
+  oiTrend.map((x) => ({
+    Strike: x.strike,
+    CE: x.ce.trend,
+    PE: x.pe.trend,
+    CE_Pct: `${x.ce.pct}%`,
+    PE_Pct: `${x.pe.pct}%`,
+  }))
+);
+
 console.table(
   classifiedSignals.map((item) => ({
     Strike: item.strike,
@@ -121,6 +210,24 @@ console.table(
 saveSnapshot(optionData.chain);
 addSnapshot(optionData.chain);
 
+oiTrend = analyzeOITrend();
+
+const oiLeaders = analyzeOILeaders(optionData.chain);
+
+
+console.log("==================================");
+console.log("OI LEADERS");
+
+console.table({
+  CallWriting: oiLeaders.callWriting
+    ? `${oiLeaders.callWriting.strike} CE (${oiLeaders.callWriting.oi})`
+    : "-",
+
+  PutWriting: oiLeaders.putWriting
+    ? `${oiLeaders.putWriting.strike} PE (${oiLeaders.putWriting.oi})`
+    : "-",
+});
+
 console.log("History Size:", historySize());
     console.log("==================================");
   } catch (err) {
@@ -128,6 +235,15 @@ console.log("History Size:", historySize());
   }
 
   const data = structuredClone(marketModel);
+
+const oiLeaders = analyzeOILeaders(optionData?.chain ?? []);
+
+data.oiLeaders = {
+  callWriting: oiLeaders.callWriting,
+  putWriting: oiLeaders.putWriting,
+  callUnwinding: oiLeaders.callUnwinding,
+  putUnwinding: oiLeaders.putUnwinding,
+};
 
   data.nifty = live.nifty;
   data.bankNifty = live.bankNifty;
@@ -138,7 +254,7 @@ console.log("History Size:", historySize());
     data.pcr = optionAnalysis.pcr;
 
     data.optionChain.atm = optionData.atm;
-    data.optionChain.maxPain = optionData.atm;
+   data.optionChain.maxPain = optionAnalysis.maxPain;
 
     data.optionChain.highestCallOI =
       optionAnalysis.resistance;
@@ -211,12 +327,16 @@ console.log("History Size:", historySize());
   // (Will be replaced in next phase)
   // --------------------------------
 
- let longBuildUp = 0;
+let longBuildUp = 0;
 let shortBuildUp = 0;
 let shortCovering = 0;
 let longUnwinding = 0;
 
+let totalSignals = 0;
+
 for (const row of classifiedSignals) {
+  totalSignals += 2;
+
   if (row.ce.signal === "Long Build-up") longBuildUp++;
   if (row.pe.signal === "Long Build-up") longBuildUp++;
 
@@ -229,6 +349,18 @@ for (const row of classifiedSignals) {
   if (row.ce.signal === "Long Unwinding") longUnwinding++;
   if (row.pe.signal === "Long Unwinding") longUnwinding++;
 }
+
+if (totalSignals > 0) {
+  data.oi.longBuildUp = Math.round((longBuildUp / totalSignals) * 100);
+  data.oi.shortBuildUp = Math.round((shortBuildUp / totalSignals) * 100);
+  data.oi.shortCovering = Math.round((shortCovering / totalSignals) * 100);
+  data.oi.longUnwinding = Math.round((longUnwinding / totalSignals) * 100);
+} else {
+  data.oi.longBuildUp = 0;
+  data.oi.shortBuildUp = 0;
+  data.oi.shortCovering = 0;
+  data.oi.longUnwinding = 0;
+}
 console.log("==================================");
 console.log("COUNT DEBUG");
 
@@ -240,10 +372,6 @@ console.log({
   classifiedSignals: classifiedSignals.length,
 });
 
-data.oi.longBuildUp = longBuildUp;
-data.oi.shortBuildUp = shortBuildUp;
-data.oi.shortCovering = shortCovering;
-data.oi.longUnwinding = longUnwinding;
 
 marketBias = analyzeMarketBias({
   marketStructure,
@@ -254,6 +382,24 @@ marketBias = analyzeMarketBias({
   macdTrend: data.macd.trend,
   adx: data.adx.adx,
 });
+// ------------------------------
+// Market Structure
+// ------------------------------
+
+if (marketStructure) {
+  data.marketStructure.trend = marketStructure.trend;
+  data.marketStructure.support = marketStructure.support;
+  data.marketStructure.resistance = marketStructure.resistance;
+}
+// ------------------------------
+// Market Bias
+// ------------------------------
+
+if (marketBias) {
+  data.marketBias.signal = marketBias.signal;
+  data.marketBias.confidence = marketBias.confidence;
+  data.marketBias.reasons = marketBias.reasons;
+}
 
 console.log("==================================");
 console.log("MARKET BIAS");
@@ -298,6 +444,32 @@ console.table(marketBias);
 data.optionChain.chain = optionData?.chain ?? [];
 data.optionChain.atm = optionData?.atm ?? null;
 data.optionChain.expiry = optionData?.expiry ?? "";
+
+// ------------------------------
+// OI Trend Summary
+// ------------------------------
+
+let bullish = 0;
+let bearish = 0;
+let neutral = 0;
+
+for (const row of oiTrend) {
+  if (row.ce.trend === "Bullish") bullish++;
+  else if (row.ce.trend === "Bearish") bearish++;
+  else neutral++;
+
+  if (row.pe.trend === "Bullish") bullish++;
+  else if (row.pe.trend === "Bearish") bearish++;
+  else neutral++;
+}
+
+const total = bullish + bearish + neutral;
+
+if (total > 0) {
+  data.oiTrend.bullish = Math.round((bullish / total) * 100);
+  data.oiTrend.bearish = Math.round((bearish / total) * 100);
+  data.oiTrend.neutral = Math.round((neutral / total) * 100);
+}
 
 return data;
 }

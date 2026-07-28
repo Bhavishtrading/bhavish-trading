@@ -1,53 +1,79 @@
-// src/services/oiChangeEngine.js
+// ==========================================
+// OI Change Engine
+// Bhavish Trading V2
+// ==========================================
 
 export function calculateOIChange(previousChain, currentChain) {
-  if (!previousChain || !currentChain) return [];
+  if (!previousChain || !currentChain) {
+    return [];
+  }
 
-  console.log("========== OI CHANGE DEBUG ==========");
-  console.log("Previous Chain Size:", previousChain.length);
-  console.log("Current Chain Size :", currentChain.length);
+  const result = [];
 
-  return currentChain.map((current) => {
+  const oldAtm = previousChain.find((x) => x.strike === 23900);
+const newAtm = currentChain.find((x) => x.strike === 23900);
+
+console.log("========== OI DEBUG ==========");
+console.log({
+  oldCE: oldAtm?.ce?.oi,
+  newCE: newAtm?.ce?.oi,
+  oldPE: oldAtm?.pe?.oi,
+  newPE: newAtm?.pe?.oi,
+});
+
+  for (const current of currentChain) {
     const previous = previousChain.find(
-      (item) => item.strike === current.strike
+      (x) => x.strike === current.strike
     );
 
-    if (!previous) return null;
+    if (!previous) continue;
 
-    console.log("Strike:", current.strike);
-    console.log("Previous CE OI:", previous.ce.oi);
-    console.log("Current  CE OI:", current.ce.oi);
-    console.log("Previous PE OI:", previous.pe.oi);
-    console.log("Current  PE OI:", current.pe.oi);
+    const ceOld = previous.ce?.oi ?? 0;
+    const ceNew = current.ce?.oi ?? 0;
 
-    const ceOIDiff = current.ce.oi - previous.ce.oi;
-    const peOIDiff = current.pe.oi - previous.pe.oi;
+    const peOld = previous.pe?.oi ?? 0;
+    const peNew = current.pe?.oi ?? 0;
 
-    console.log("CE Diff:", ceOIDiff);
-    console.log("PE Diff:", peOIDiff);
-    console.log("--------------------------------");
+    const ceDiff = ceNew - ceOld;
+    const peDiff = peNew - peOld;
 
-    const cePriceDiff = current.ce.ltp - previous.ce.ltp;
-    const pePriceDiff = current.pe.ltp - previous.pe.ltp;
-
-    const ceOIChangePct =
-      previous.ce.oi > 0 ? (ceOIDiff / previous.ce.oi) * 100 : 0;
-
-    const peOIChangePct =
-      previous.pe.oi > 0 ? (peOIDiff / previous.pe.oi) * 100 : 0;
-
-    return {
+    result.push({
       strike: current.strike,
+
       ce: {
-        oiDiff: ceOIDiff,
-        oiChangePct: Number(ceOIChangePct.toFixed(2)),
-        priceDiff: Number(cePriceDiff.toFixed(2)),
+        oldOI: ceOld,
+        newOI: ceNew,
+        oiDiff: ceDiff,
+        oiChangePct:
+          ceOld === 0
+            ? 0
+            : Number(((ceDiff / ceOld) * 100).toFixed(2)),
       },
+
       pe: {
-        oiDiff: peOIDiff,
-        oiChangePct: Number(peOIChangePct.toFixed(2)),
-        priceDiff: Number(pePriceDiff.toFixed(2)),
+        oldOI: peOld,
+        newOI: peNew,
+        oiDiff: peDiff,
+        oiChangePct:
+          peOld === 0
+            ? 0
+            : Number(((peDiff / peOld) * 100).toFixed(2)),
       },
-    };
-  }).filter(Boolean);
+    });
+  }
+
+  console.log("==================================");
+  console.log("📊 OI CHANGE ENGINE");
+
+  console.table(
+    result.map((row) => ({
+      Strike: row.strike,
+      CE_Diff: row.ce.oiDiff,
+      PE_Diff: row.pe.oiDiff,
+      CE_Pct: row.ce.oiChangePct + "%",
+      PE_Pct: row.pe.oiChangePct + "%",
+    }))
+  );
+
+  return result;
 }

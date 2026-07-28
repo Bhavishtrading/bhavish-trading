@@ -22,6 +22,8 @@ export default function LiveOptionChain({ optionChain }) {
   const chain = optionChain?.chain ?? [];
   const atm = optionChain?.atm;
   const expiry = optionChain?.expiry;
+  const highestCallOI = optionChain?.highestCallOI;
+const highestPutOI = optionChain?.highestPutOI;
 
   return (
     <div className="bg-slate-800 rounded-xl p-6 mt-8 border border-slate-700 shadow-lg">
@@ -64,15 +66,25 @@ export default function LiveOptionChain({ optionChain }) {
           <tbody>
             {chain.map((row) => {
               const isATM = Number(row.strike) === Number(atm);
+              const isHighestCall =
+  Number(row.strike) === Number(highestCallOI);
+
+const isHighestPut =
+  Number(row.strike) === Number(highestPutOI);
 
               return (
                 <tr
                   key={row.strike}
-                  className={`transition-all duration-150 border-b border-slate-700 ${
-                    isATM
-                      ? "bg-yellow-500/20"
-                      : "hover:bg-slate-700/60"
-                  }`}
+                 className={`transition-all duration-150 border-b border-slate-700
+${
+  isATM
+    ? "bg-yellow-500/20"
+    : isHighestCall
+    ? "bg-red-500/15"
+    : isHighestPut
+    ? "bg-green-500/15"
+    : "hover:bg-slate-700/60"
+}`}
                 >
                   <td className="p-4 font-semibold text-green-300">
                     {row.ce?.ltp ?? "-"}

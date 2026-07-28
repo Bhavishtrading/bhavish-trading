@@ -1,60 +1,56 @@
+// src/services/oiAnalyzer.js
+
 export function analyzeOIChange(previous, current) {
   if (!previous || !current) {
     return [];
   }
 
-  return current.map((currRow) => {
+  const result = current.map((currRow) => {
     const prevRow = previous.find(
       (row) => row.strike === currRow.strike
     );
 
-   if (!prevRow) {
-  return {
-    strike: currRow.strike,
+    if (!prevRow) {
+      return {
+        strike: currRow.strike,
 
-    ce: {
-      oldPrice: 0,
-      newPrice: currRow.ce.ltp,
-      oldOI: 0,
-      newOI: currRow.ce.oi,
-      signal: "No Previous Data",
-    },
+        ce: {
+          oldPrice: 0,
+          newPrice: currRow.ce.ltp,
+          oldOI: 0,
+          newOI: currRow.ce.oi,
+          signal: "No Previous Data",
+          priceDiff: 0,
+          oiDiff: 0,
+        },
 
-    pe: {
-      oldPrice: 0,
-      newPrice: currRow.pe.ltp,
-      oldOI: 0,
-      newOI: currRow.pe.oi,
-      signal: "No Previous Data",
-    },
-  };
-}
-
-    const ceOldOI = prevRow.ce.oi;
-    const ceNewOI = currRow.ce.oi;
+        pe: {
+          oldPrice: 0,
+          newPrice: currRow.pe.ltp,
+          oldOI: 0,
+          newOI: currRow.pe.oi,
+          signal: "No Previous Data",
+          priceDiff: 0,
+          oiDiff: 0,
+        },
+      };
+    }
 
     const ceOldPrice = prevRow.ce.ltp;
     const ceNewPrice = currRow.ce.ltp;
-
-    const peOldOI = prevRow.pe.oi;
-    const peNewOI = currRow.pe.oi;
+    const ceOldOI = prevRow.ce.oi;
+    const ceNewOI = currRow.ce.oi;
 
     const peOldPrice = prevRow.pe.ltp;
     const peNewPrice = currRow.pe.ltp;
+    const peOldOI = prevRow.pe.oi;
+    const peNewOI = currRow.pe.oi;
 
-    const ceSignal = classify(
-      ceOldPrice,
-      ceNewPrice,
-      ceOldOI,
-      ceNewOI
-    );
+    const cePriceDiff = Number((ceNewPrice - ceOldPrice).toFixed(2));
+    const pePriceDiff = Number((peNewPrice - peOldPrice).toFixed(2));
 
-    const peSignal = classify(
-      peOldPrice,
-      peNewPrice,
-      peOldOI,
-      peNewOI
-    );
+    const ceOIDiff = ceNewOI - ceOldOI;
+    const peOIDiff = peNewOI - peOldOI;
 
     return {
       strike: currRow.strike,
@@ -64,7 +60,9 @@ export function analyzeOIChange(previous, current) {
         newPrice: ceNewPrice,
         oldOI: ceOldOI,
         newOI: ceNewOI,
-        signal: ceSignal,
+        priceDiff: cePriceDiff,
+        oiDiff: ceOIDiff,
+        signal: classify(ceOldPrice, ceNewPrice, ceOldOI, ceNewOI),
       },
 
       pe: {
@@ -72,32 +70,48 @@ export function analyzeOIChange(previous, current) {
         newPrice: peNewPrice,
         oldOI: peOldOI,
         newOI: peNewOI,
-        signal: peSignal,
+        priceDiff: pePriceDiff,
+        oiDiff: peOIDiff,
+        signal: classify(peOldPrice, peNewPrice, peOldOI, peNewOI),
       },
     };
   });
+
+  console.log("==================================");
+  console.log("OI ANALYZER");
+
+  console.table(
+    result.map((r) => ({
+      Strike: r.strike,
+      CE: r.ce.signal,
+      PE: r.pe.signal,
+      CE_OI: r.ce.oiDiff,
+      PE_OI: r.pe.oiDiff,
+      CE_Price: r.ce.priceDiff,
+      PE_Price: r.pe.priceDiff,
+    }))
+  );
+
+  return result;
 }
 
 function classify(oldPrice, newPrice, oldOI, newOI) {
-  const priceUp = newPrice > oldPrice;
-  const priceDown = newPrice < oldPrice;
+  const priceDiff = newPrice - oldPrice;
+  const oiDiff = newOI - oldOI;
 
-  const oiUp = newOI > oldOI;
-  const oiDown = newOI < oldOI;
-
-  if (priceUp && oiUp) {
+  if (priceDiff > 0 && oiDiff > 0) {
     return "Long Build-up";
   }
 
-  if (priceDown && oiUp) {
+  if (priceDiff < 0 && oiDiff > 0) {
     return "Short Build-up";
   }
 
-  if (priceUp && oiDown) {
+  if (priceDiff > 0 && oiDiff < 0) {
     return "Short Covering";
   }
 
-  if (priceDown && oiDown) {
+  if (priceDiff < 0 && oiDiff < 0) {
     return "Long Unwinding";
   }
 

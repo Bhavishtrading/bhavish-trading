@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import { getUser, isLoggedIn } from "@/services/zerodha/session";
 
 export async function GET() {
-  if (!isLoggedIn()) {
+  const loggedIn = await isLoggedIn();
+
+  if (!loggedIn) {
     return NextResponse.json(
       {
         success: false,
@@ -12,7 +14,7 @@ export async function GET() {
     );
   }
 
-  const user = getUser();
+  const user = await getUser();
 
   return NextResponse.json({
     success: true,

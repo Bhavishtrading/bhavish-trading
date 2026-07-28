@@ -3,11 +3,6 @@ import { getKiteClient } from "./zerodha/client";
 import { getAccessToken } from "./zerodha/session";
 
 // =============================
-// Previous OI Cache
-// =============================
-const previousOI = {};
-
-// =============================
 // Get Live Option Data
 // =============================
 export async function getLiveOptionData(niftyLTP) {
@@ -15,14 +10,14 @@ export async function getLiveOptionData(niftyLTP) {
     throw new Error("Invalid NIFTY LTP");
   }
 
-  const optionData = await getOptionChain(niftyLTP, 2);
+  // Get 21 strikes
+  const optionData = await getOptionChain(niftyLTP, 10);
 
   const accessToken = await getAccessToken();
 
   const kite = getKiteClient();
   kite.setAccessToken(accessToken);
 
-  // Build Quote Symbols
   const symbols = [];
 
   optionData.chain.forEach((item) => {
@@ -36,69 +31,49 @@ export async function getLiveOptionData(niftyLTP) {
 
   const quotes = await kite.getQuote(symbols);
 
-  console.log("========== RAW QUOTE ==========");
+  console.log("==================================");
+  console.log("Quote Count:", Object.keys(quotes).length);
 
   const firstKey = Object.keys(quotes)[0];
 
-  console.log(firstKey);
+  console.log("========== RAW QUOTE ==========");
+  console.log("FIRST KEY :", firstKey);
   console.dir(quotes[firstKey], { depth: null });
 
-  console.log("===============================");
-
-  console.log("Quote Count:", Object.keys(quotes).length);
+  console.log("Timestamp :", quotes[firstKey]?.timestamp);
+  console.log("OI        :", quotes[firstKey]?.oi);
+  console.log("Volume    :", quotes[firstKey]?.volume);
+  console.log("LTP       :", quotes[firstKey]?.last_price);
   console.log("==================================");
 
   const chain = optionData.chain.map((item) => {
     const ceKey = item.ce ? `NFO:${item.ce.tradingsymbol}` : null;
     const peKey = item.pe ? `NFO:${item.pe.tradingsymbol}` : null;
 
-    // =============================
-    // CE
-    // =============================
     let ce = null;
+    let pe = null;
 
     if (item.ce) {
-      const currentOI = quotes[ceKey]?.oi ?? 0;
-
-      const oldOI =
-        previousOI[item.ce.tradingsymbol] ?? currentOI;
-
-      const oiChange = currentOI - oldOI;
-
-      previousOI[item.ce.tradingsymbol] = currentOI;
-
       ce = {
         symbol: item.ce.tradingsymbol,
         token: item.ce.instrument_token,
-        ltp: quotes[ceKey]?.last_price ?? null,
-        oi: currentOI,
-        oiChange,
-        volume: quotes[ceKey]?.volume ?? null,
+
+        ltp: quotes[ceKey]?.last_price ?? 0,
+        oi: quotes[ceKey]?.oi ?? 0,
+        oiChange: 0,
+        volume: quotes[ceKey]?.volume ?? 0,
       };
     }
 
-    // =============================
-    // PE
-    // =============================
-    let pe = null;
-
     if (item.pe) {
-      const currentOI = quotes[peKey]?.oi ?? 0;
-
-      const oldOI =
-        previousOI[item.pe.tradingsymbol] ?? currentOI;
-
-      const oiChange = currentOI - oldOI;
-
-      previousOI[item.pe.tradingsymbol] = currentOI;
-
       pe = {
         symbol: item.pe.tradingsymbol,
         token: item.pe.instrument_token,
-        ltp: quotes[peKey]?.last_price ?? null,
-        oi: currentOI,
-        oiChange,
-        volume: quotes[peKey]?.volume ?? null,
+
+        ltp: quotes[peKey]?.last_price ?? 0,
+        oi: quotes[peKey]?.oi ?? 0,
+        oiChange: 0,
+        volume: quotes[peKey]?.volume ?? 0,
       };
     }
 
@@ -117,12 +92,25 @@ export async function getLiveOptionData(niftyLTP) {
       Strike: x.strike,
       CE_LTP: x.ce?.ltp,
       CE_OI: x.ce?.oi,
-      CE_DeltaOI: x.ce?.oiChange,
       PE_LTP: x.pe?.ltp,
       PE_OI: x.pe?.oi,
-      PE_DeltaOI: x.pe?.oiChange,
     }))
   );
+
+  console.log("==================================");
+
+  const atmRow = chain.find((x) => x.strike === optionData.atm);
+
+ console.log("========== LIVE ATM OI ==========");
+
+console.table({
+  Time: new Date().toLocaleTimeString(),
+  Strike: atmRow?.strike,
+  CE_OI: atmRow?.ce?.oi,
+  PE_OI: atmRow?.pe?.oi,
+  CE_LTP: atmRow?.ce?.ltp,
+  PE_LTP: atmRow?.pe?.ltp,
+});
 
   console.log("==================================");
 
