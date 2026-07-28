@@ -1,15 +1,18 @@
 import { getLiveQuote } from "./zerodha/market";
+import { getYahooMarketData } from "./yahooEngine";
 
 console.log("====================================");
-console.log("ZERODHA MARKET DATA ADAPTER LOADED");
+console.log("MARKET DATA ADAPTER LOADED");
 console.log("====================================");
 
 export async function getLiveMarketData() {
+  // -----------------------------
+  // Try Zerodha First
+  // -----------------------------
   try {
-  const live = await getLiveQuote();
+    const live = await getLiveQuote();
 
-    console.log("========== ZERODHA LIVE DATA ==========");
-    console.log(live);
+    console.log("✅ Zerodha Live Data");
 
     return {
       nifty: live.nifty,
@@ -19,21 +22,42 @@ export async function getLiveMarketData() {
       candles: [],
       source: "Zerodha",
     };
-  } catch (error) {
-  console.error("========== ZERODHA ERROR ==========");
-  console.error(error);
-
-  if (error.stack) {
-    console.error(error.stack);
+  } catch (err) {
+    console.log("❌ Zerodha Failed");
+    console.log(err.message);
   }
 
-  return {
-    nifty: null,
-    bankNifty: null,
-    vix: null,
-    close: null,
-    candles: [],
-    source: "Error",
-  };
-}
+  // -----------------------------
+  // Yahoo Fallback
+  // -----------------------------
+  try {
+    const yahoo = await getYahooMarketData();
+
+    if (!yahoo) {
+      throw new Error("Yahoo returned null");
+    }
+
+    console.log("✅ Yahoo Fallback Working");
+
+    return {
+      nifty: yahoo.nifty,
+      bankNifty: null,
+      vix: null,
+      close: yahoo.nifty,
+      candles: yahoo.quotes ?? [],
+      source: "Yahoo",
+    };
+  } catch (err) {
+    console.log("❌ Yahoo Failed");
+    console.log(err.message);
+
+    return {
+      nifty: null,
+      bankNifty: null,
+      vix: null,
+      close: null,
+      candles: [],
+      source: "Unavailable",
+    };
+  }
 }
