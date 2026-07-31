@@ -59,7 +59,40 @@ export async function getLiveOptionData(niftyLTP) {
     console.log("LTP       :", quotes[atmKey]?.last_price);
     console.log("==================================");
   }
+// ======================================
+// Build Full Expiry Chain
+// ======================================
 
+const fullChain = optionData.fullChain.map((item) => {
+  const ceKey = item.ce ? `NFO:${item.ce.tradingsymbol}` : null;
+  const peKey = item.pe ? `NFO:${item.pe.tradingsymbol}` : null;
+
+  return {
+    strike: item.strike,
+
+    ce: item.ce
+      ? {
+          symbol: item.ce.tradingsymbol,
+          token: item.ce.instrument_token,
+          ltp: quotes[ceKey]?.last_price ?? 0,
+          oi: quotes[ceKey]?.oi ?? 0,
+          volume: quotes[ceKey]?.volume ?? 0,
+          oiChange: 0,
+        }
+      : null,
+
+    pe: item.pe
+      ? {
+          symbol: item.pe.tradingsymbol,
+          token: item.pe.instrument_token,
+          ltp: quotes[peKey]?.last_price ?? 0,
+          oi: quotes[peKey]?.oi ?? 0,
+          volume: quotes[peKey]?.volume ?? 0,
+          oiChange: 0,
+        }
+      : null,
+  };
+});
   // Build Chain
   const chain = optionData.chain.map((item) => {
     const ceKey = item.ce ? `NFO:${item.ce.tradingsymbol}` : null;
@@ -121,8 +154,11 @@ export async function getLiveOptionData(niftyLTP) {
   console.log("==================================");
 
   return {
-    atm: optionData.atm,
-    expiry: optionData.expiry,
-    chain,
-  };
+  atm: optionData.atm,
+  expiry: optionData.expiry,
+
+  fullChain,
+
+  chain,
+};
 }

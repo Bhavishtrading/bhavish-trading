@@ -29,15 +29,11 @@ export async function getOptionChain(spotPrice, range = 2) {
 
   const chain = strikes.map((strike) => {
     const ce = expiryOptions.find(
-      (o) =>
-        o.strike === strike &&
-        o.instrument_type === "CE"
+      (o) => o.strike === strike && o.instrument_type === "CE"
     );
 
     const pe = expiryOptions.find(
-      (o) =>
-        o.strike === strike &&
-        o.instrument_type === "PE"
+      (o) => o.strike === strike && o.instrument_type === "PE"
     );
 
     return {
@@ -50,6 +46,7 @@ export async function getOptionChain(spotPrice, range = 2) {
   console.log("==================================");
   console.log("Nearest Expiry:", new Date(nearestExpiry));
   console.log("ATM:", atmStrike);
+
   console.table(
     chain.map((x) => ({
       Strike: x.strike,
@@ -57,11 +54,19 @@ export async function getOptionChain(spotPrice, range = 2) {
       PE: x.pe?.tradingsymbol,
     }))
   );
+
   console.log("==================================");
+  console.log("Total contracts in expiry:", expiryOptions.length);
+  console.log("Dashboard strikes:", chain.length);
 
   return {
     atm: atmStrike,
     expiry: new Date(nearestExpiry),
+
+    // Full expiry contracts
+    fullChain: expiryOptions,
+
+    // Dashboard strikes
     chain,
   };
 }

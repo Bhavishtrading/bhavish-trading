@@ -77,6 +77,18 @@ export function analyzeOptionChain(chain) {
     MaxPain: maxPain,
   });
 
+console.log("==================================");
+console.log("PCR DEBUG");
+
+console.table({
+  TotalCallOI: totalCallOI,
+  TotalPutOI: totalPutOI,
+  PCR: pcr,
+  TotalStrikes: chain.length,
+});
+
+console.log("==================================");
+
   return {
     totalCallOI,
     totalPutOI,

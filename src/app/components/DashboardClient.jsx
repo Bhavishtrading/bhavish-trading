@@ -45,7 +45,7 @@ export default function DashboardClient() {
 
     const interval = setInterval(() => {
       fetchMarketData();
-    }, 3000);
+    }, 10000);
 
     return () => clearInterval(interval);
   }, []);
