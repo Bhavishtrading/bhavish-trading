@@ -9,70 +9,104 @@ export function analyzeOITrend() {
     return [];
   }
 
- const latest = history[history.length - 1];
-const oldest = history[0];
+  // Compare Latest Snapshot with Previous Snapshot
+  const latest = history[history.length - 1];
+  const previous = history[history.length - 2];
 
-  const trend = latest.map((current) => {
-    const previous = oldest.find(
-      (item) => item.strike === current.strike
-    );
+  const trend = latest
+    .map((current) => {
+      const prev = previous.find(
+        (item) => item.strike === current.strike
+      );
 
-    if (!previous) return null;
+      if (!prev) return null;
 
-    const ceDiff = current.ce.oi - previous.ce.oi;
-    const peDiff = current.pe.oi - previous.pe.oi;
+      const ceDiff = current.ce.oi - prev.ce.oi;
+      const peDiff = current.pe.oi - prev.pe.oi;
 
-    const cePct =
-      previous.ce.oi > 0
-        ? (ceDiff / previous.ce.oi) * 100
-        : 0;
+      const cePct =
+        prev.ce.oi > 0
+          ? (ceDiff / prev.ce.oi) * 100
+          : 0;
 
-    const pePct =
-      previous.pe.oi > 0
-        ? (peDiff / previous.pe.oi) * 100
-        : 0;
+      const pePct =
+        prev.pe.oi > 0
+          ? (peDiff / prev.pe.oi) * 100
+          : 0;
 
-    return {
-      strike: current.strike,
+      let signal = "Neutral";
 
-      ce: {
-        startOI: previous.ce.oi,
-        currentOI: current.ce.oi,
-        diff: ceDiff,
-        pct: Number(cePct.toFixed(2)),
-        trend:
-          ceDiff > 0
-            ? "Increasing"
-            : ceDiff < 0
-            ? "Decreasing"
-            : "Flat",
-      },
+      // OI Classification
+      if (ceDiff > 0 && peDiff < 0) {
+        signal = "Short Build-up";
+      } else if (ceDiff < 0 && peDiff > 0) {
+        signal = "Long Build-up";
+      } else if (ceDiff < 0 && peDiff < 0) {
+        signal = "Short Covering";
+      } else if (ceDiff > 0 && peDiff > 0) {
+        signal = "Long Unwinding";
+      }
 
-      pe: {
-        startOI: previous.pe.oi,
-        currentOI: current.pe.oi,
-        diff: peDiff,
-        pct: Number(pePct.toFixed(2)),
-        trend:
-          peDiff > 0
-            ? "Increasing"
-            : peDiff < 0
-            ? "Decreasing"
-            : "Flat",
-      },
-    };
-  }).filter(Boolean);
+      let marketBias = "Neutral";
+
+      if (signal === "Long Build-up") {
+        marketBias = "Bullish";
+      } else if (signal === "Short Covering") {
+        marketBias = "Bullish";
+      } else if (signal === "Short Build-up") {
+        marketBias = "Bearish";
+      } else if (signal === "Long Unwinding") {
+        marketBias = "Bearish";
+      }
+
+      return {
+        strike: current.strike,
+
+        ce: {
+          startOI: prev.ce.oi,
+          currentOI: current.ce.oi,
+          diff: ceDiff,
+          pct: Number(cePct.toFixed(2)),
+          trend:
+            ceDiff > 0
+              ? "Increasing"
+              : ceDiff < 0
+              ? "Decreasing"
+              : "Flat",
+        },
+
+        pe: {
+          startOI: prev.pe.oi,
+          currentOI: current.pe.oi,
+          diff: peDiff,
+          pct: Number(pePct.toFixed(2)),
+          trend:
+            peDiff > 0
+              ? "Increasing"
+              : peDiff < 0
+              ? "Decreasing"
+              : "Flat",
+        },
+
+        signal,
+        marketBias,
+      };
+    })
+    .filter(Boolean);
 
   console.log("==================================");
-  console.log("OI TREND ENGINE");
+  console.log("OI TREND ENGINE V3");
+  console.log("Snapshots:", history.length);
 
   console.table(
     trend.map((x) => ({
       Strike: x.strike,
-      CE_Trend: x.ce.trend,
+      CE_Diff: x.ce.diff,
       CE_Pct: `${x.ce.pct}%`,
-      PE_Trend: x.pe.trend,
+      PE_Diff: x.pe.diff,
       PE_Pct: `${x.pe.pct}%`,
+      Signal: x.signal,
+      Bias: x.marketBias,
     }))
   );
 

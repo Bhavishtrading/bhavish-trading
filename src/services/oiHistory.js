@@ -1,67 +1,100 @@
-// ==========================================
-// OI History Engine
-// Bhavish Trading V2
-// ==========================================
+import fs from "fs";
+import path from "path";
 
-const MAX_HISTORY = 20;
+const HISTORY_FILE = path.join(
+  process.cwd(),
+  "data",
+  "history.json"
+);
 
-const history = [];
+const MAX_HISTORY = 10;
 
-/**
- * Add current option chain snapshot
- */
-export function addSnapshot(chain) {
-  if (!Array.isArray(chain)) return;
+// ====================================
+// Read History
+// ====================================
+function readHistory() {
+  try {
+    if (!fs.existsSync(HISTORY_FILE)) {
+      return [];
+    }
 
-  history.push(structuredClone(chain));
+    const data = fs.readFileSync(
+      HISTORY_FILE,
+      "utf8"
+    );
+
+    if (!data) return [];
+
+    return JSON.parse(data);
+  } catch (err) {
+    console.error("History Read Error", err);
+    return [];
+  }
+}
+
+// ====================================
+// Write History
+// ====================================
+function writeHistory(history) {
+  fs.writeFileSync(
+    HISTORY_FILE,
+    JSON.stringify(history, null, 2),
+    "utf8"
+  );
+}
+
+// ====================================
+// Add Snapshot
+// ====================================
+export function addSnapshot(snapshot) {
+
+  const history = readHistory();
+
+  history.push(snapshot);
 
   while (history.length > MAX_HISTORY) {
     history.shift();
   }
 
+  writeHistory(history);
+
   console.log("==================================");
   console.log("📚 History Updated");
-  console.log(`Snapshots : ${history.length}`);
-}
-
-/**
- * Returns latest snapshot
- */
-export function getLatestSnapshot() {
-  if (history.length === 0) return null;
-
-  return history[history.length - 1];
-}
-
-/**
- * Returns previous snapshot
- */
-export function getPreviousHistory() {
-  if (history.length < 2) return null;
-
-  return history[history.length - 2];
-}
-
-/**
- * Returns all snapshots
- */
-export function getHistory() {
-  return history;
-}
-
-/**
- * Returns history size
- */
-export function historySize() {
-  return history.length;
-}
-
-/**
- * Clear history
- */
-export function clearHistory() {
-  history.length = 0;
-
+  console.log("Snapshots :", history.length);
   console.log("==================================");
-  console.log("🗑 History Cleared");
+}
+
+// ====================================
+// Get History
+// ====================================
+export function getHistory() {
+  return readHistory();
+}
+
+// ====================================
+// History Size
+// ====================================
+export function historySize() {
+  return readHistory().length;
+}
+
+// ====================================
+// Clear History
+// ====================================
+export function clearHistory() {
+  writeHistory([]);
+}
+
+// ====================================
+// Analyze Trend
+// ====================================
+export function analyzeOITrend() {
+
+  const history = readHistory();
+
+  if (history.length < 2) {
+    return [];
+  }
+
+  return history;
 }

@@ -1,56 +1,84 @@
-// ==========================================
-// OI Snapshot Engine
-// Bhavish Trading V2
-// ==========================================
+import fs from "fs";
+import path from "path";
 
-let previousSnapshot = null;
+const SNAPSHOT_FILE = path.join(
+  process.cwd(),
+  "data",
+  "snapshot.json"
+);
 
-/**
- * Save current option chain snapshot.
- * Deep clone is used so future updates
- * won't modify previous snapshot.
- */
+// ================================
+// Save Snapshot
+// ================================
 export function saveSnapshot(chain) {
-  if (!Array.isArray(chain)) return;
+  try {
+    fs.writeFileSync(
+      SNAPSHOT_FILE,
+      JSON.stringify(chain, null, 2),
+      "utf8"
+    );
 
-  previousSnapshot = structuredClone(chain);
-
-  console.log("==================================");
-  console.log("📸 Snapshot Saved");
-  console.log(`Rows : ${previousSnapshot.length}`);
+    console.log("==================================");
+    console.log("📸 Snapshot Saved");
+    console.log("Rows :", chain.length);
+    console.log("File :", SNAPSHOT_FILE);
+    console.log("==================================");
+  } catch (err) {
+    console.error("❌ Snapshot Save Error");
+    console.error(err);
+  }
 }
 
-/**
- * Returns previous snapshot.
- */
+// ================================
+// Read Snapshot
+// ================================
 export function getPreviousSnapshot() {
-  return previousSnapshot;
+  try {
+    if (!fs.existsSync(SNAPSHOT_FILE)) {
+      return null;
+    }
+
+    const data = fs.readFileSync(
+      SNAPSHOT_FILE,
+      "utf8"
+    );
+
+    if (!data) return null;
+
+    return JSON.parse(data);
+  } catch (err) {
+    console.error("❌ Snapshot Read Error");
+    console.error(err);
+    return null;
+  }
 }
 
-/**
- * True if snapshot exists.
- */
+// ================================
+// Has Snapshot
+// ================================
 export function hasSnapshot() {
-  return previousSnapshot !== null;
+  try {
+    if (!fs.existsSync(SNAPSHOT_FILE)) {
+      return false;
+    }
+
+    const data = JSON.parse(
+      fs.readFileSync(SNAPSHOT_FILE, "utf8")
+    );
+
+    return Array.isArray(data) && data.length > 0;
+  } catch {
+    return false;
+  }
 }
 
-/**
- * Clear snapshot.
- * Useful while restarting engine.
- */
+// ================================
+// Clear Snapshot
+// ================================
 export function clearSnapshot() {
-  previousSnapshot = null;
-
-  console.log("==================================");
-  console.log("🗑 Snapshot Cleared");
-}
-
-/**
- * Returns age information.
- */
-export function snapshotInfo() {
-  return {
-    exists: previousSnapshot !== null,
-    rows: previousSnapshot?.length ?? 0,
-  };
+  fs.writeFileSync(
+    SNAPSHOT_FILE,
+    "[]",
+    "utf8"
+  );
 }

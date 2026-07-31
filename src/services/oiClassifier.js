@@ -1,66 +1,77 @@
-export function classifyOIChanges(oiChanges) {
-  const OI_THRESHOLD = 0.2;      // Ignore tiny OI changes
-  const PRICE_THRESHOLD = 0.1;   // Ignore tiny price changes
+// =======================================
+// OI Classifier Engine
+// =======================================
 
-  return oiChanges.map((item) => {
-    return {
-      strike: item.strike,
-      ce: classifySide(item.ce),
-      pe: classifySide(item.pe),
-    };
-  });
-
-  function classifySide(side) {
-    const oiPct = side.oiChangePct;
-    const price = side.priceDiff;
-
-    if (
-      Math.abs(oiPct) < OI_THRESHOLD ||
-      Math.abs(price) < PRICE_THRESHOLD
-    ) {
-      return {
-        signal: "Neutral",
-        oiChangePct: oiPct,
-        priceDiff: price,
-      };
-    }
-
-    if (oiPct > 0 && price > 0) {
-      return {
-        signal: "Long Build-up",
-        oiChangePct: oiPct,
-        priceDiff: price,
-      };
-    }
-
-    if (oiPct > 0 && price < 0) {
-      return {
-        signal: "Short Build-up",
-        oiChangePct: oiPct,
-        priceDiff: price,
-      };
-    }
-
-    if (oiPct < 0 && price > 0) {
-      return {
-        signal: "Short Covering",
-        oiChangePct: oiPct,
-        priceDiff: price,
-      };
-    }
-
-    if (oiPct < 0 && price < 0) {
-      return {
-        signal: "Long Unwinding",
-        oiChangePct: oiPct,
-        priceDiff: price,
-      };
-    }
-
-    return {
-      signal: "Neutral",
-      oiChangePct: oiPct,
-      priceDiff: price,
-    };
+export function classifyOIChanges(previousChain, currentChain) {
+  if (!previousChain || !currentChain) {
+    return [];
   }
+
+  const result = [];
+
+  for (const current of currentChain) {
+    const previous = previousChain.find(
+      (x) => x.strike === current.strike
+    );
+
+    if (!previous) continue;
+
+    // ---------- CE ----------
+    const ceOldOI = previous.ce?.oi ?? 0;
+    const ceNewOI = current.ce?.oi ?? 0;
+
+    const ceOldPrice = previous.ce?.ltp ?? 0;
+    const ceNewPrice = current.ce?.ltp ?? 0;
+
+    const ceSignal = getSignal(
+      ceNewPrice - ceOldPrice,
+      ceNewOI - ceOldOI
+    );
+
+    // ---------- PE ----------
+    const peOldOI = previous.pe?.oi ?? 0;
+    const peNewOI = current.pe?.oi ?? 0;
+
+    const peOldPrice = previous.pe?.ltp ?? 0;
+    const peNewPrice = current.pe?.ltp ?? 0;
+
+    const peSignal = getSignal(
+      peNewPrice - peOldPrice,
+      peNewOI - peOldOI
+    );
+
+    result.push({
+      strike: current.strike,
+
+      ce: {
+        signal: ceSignal,
+      },
+
+      pe: {
+        signal: peSignal,
+      },
+    });
+  }
+
+  return result;
+}
+
+function getSignal(priceDiff, oiDiff) {
+  if (priceDiff > 0 && oiDiff > 0) {
+    return "Long Build-up";
+  }
+
+  if (priceDiff < 0 && oiDiff > 0) {
+    return "Short Build-up";
+  }
+
+  if (priceDiff > 0 && oiDiff < 0) {
+    return "Short Covering";
+  }
+
+  if (priceDiff < 0 && oiDiff < 0) {
+    return "Long Unwinding";
+  }
+
+  return "Neutral";
 }

@@ -15,6 +15,23 @@ export async function getYahooMarketData() {
     console.log("Yahoo Result Received");
     console.log(result.meta);
 
+    // ==============================
+// INDIA VIX TEST
+// ==============================
+try {
+  const vixResult = await yahooFinance.chart("^INDIAVIX", {
+    period1: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+    interval: "5m",
+  });
+
+  console.log("========== INDIA VIX ==========");
+  console.log(vixResult.meta);
+  console.log(vixResult.quotes?.at(-1));
+} catch (err) {
+  console.log("========== VIX ERROR ==========");
+  console.log(err.message);
+}
+
     const quotes = result.quotes || [];
 
     if (!quotes.length) {

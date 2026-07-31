@@ -15,6 +15,10 @@ import { analyzeMarketBias } from "./marketBias";
 
 import { analyzeOITrend } from "./oiTrendEngine";
 import { analyzeOILeaders } from "./oiLeaders";
+import {
+  shouldTakeSnapshot,
+  getLastSnapshotTime,
+} from "./snapshotScheduler";
 
 import {
   addSnapshot,
@@ -28,6 +32,7 @@ import {
 } from "./oiSnapshot";
 
 import { analyzeOIChange } from "./oiAnalyzer";
+import { getOIChangeSummary } from "./oiChangeSummary";
 
 export async function getMarketData() {
   console.log("==================================");
@@ -47,8 +52,24 @@ export async function getMarketData() {
   let marketBias = null;
   let oiTrend = [];
 
+  let oiSummary = {
+  topCEIncrease: [],
+  topPEIncrease: [],
+  topCEDecrease: [],
+  topPEDecrease: [],
+};
+
   try {
     optionData = await getLiveOptionData(live.nifty);
+
+const takeSnapshot = shouldTakeSnapshot();
+
+console.log("==================================");
+console.log("DEBUG SNAPSHOT");
+console.log("takeSnapshot :", takeSnapshot);
+console.log("hasSnapshot  :", hasSnapshot());
+console.log("historySize  :", historySize());
+console.log("==================================");
 
     // =========================================
 // Snapshot Compare
@@ -73,144 +94,119 @@ console.table(marketStructure);
     console.log("OPTION ANALYSIS");
     console.log(optionAnalysis);
 
-   if (hasSnapshot()) {
+ // =========================================
+// Snapshot Compare
+// =========================================
+if (hasSnapshot()) {
+
   console.log("==================================");
-  console.log("Comparing With Previous Snapshot");
+  console.log("📊 Comparing Previous Snapshot");
 
   const previousSnapshot = getPreviousSnapshot();
 
-  // Existing Signal Analysis
- oiSignals = analyzeOIChange(
-  previousSnapshot,
-  optionData.chain
-);
-console.log("========== SNAPSHOT TEST ==========");
+  console.log("Previous Snapshot Rows:", previousSnapshot?.length ?? 0);
+  console.log("Current Snapshot Rows :", optionData.chain.length);
 
-const oldATM = previousSnapshot.find(
-  (x) => x.strike === optionData.atm
-);
+  // -------------------------
+  // Calculate OI Difference
+  // -------------------------
+  const oiChanges = calculateOIChange(
+    previousSnapshot,
+    optionData.chain
+  );
+  console.log("OI Changes Count:", oiChanges.length);
+console.log("First OI Change:", oiChanges[0]);
+console.table(oiChanges.slice(0, 5));
 
-const newATM = optionData.chain.find(
-  (x) => x.strike === optionData.atm
-);
-
-console.log({
-  strike: optionData.atm,
-  oldCE: oldATM?.ce?.oi,
-  newCE: newATM?.ce?.oi,
-  oldPE: oldATM?.pe?.oi,
-  newPE: newATM?.pe?.oi,
-});
-
-  console.log("OI SIGNALS RAW:");
-console.dir(oiSignals, { depth: null });
-
-  console.table(
-    oiSignals.map((x) => ({
-      Strike: x.strike,
-      CE: x.ce.signal,
-      PE: x.pe.signal,
-    }))
+  // -------------------------
+  // Classify Signals
+  // -------------------------
+  classifiedSignals = classifyOIChanges(
+    previousSnapshot,
+    optionData.chain
   );
 
-  // NEW OI Change Engine
- const oiChanges = calculateOIChange(
-  previousSnapshot,
-  optionData.chain
-);
-console.log("========== OI CHANGES ==========");
+  // -------------------------
+  // OI Summary
+  // -------------------------
+  oiSummary = getOIChangeSummary(oiChanges);
 
-console.table(
-  oiChanges.map((x) => ({
-    Strike: x.strike,
-    CE: x.ce?.oiDiff,
-    PE: x.pe?.oiDiff,
-  }))
-);
+  // -------------------------
+  // Merge OI Change
+  // -------------------------
+  for (const change of oiChanges) {
 
-// Merge OI Change into Option Chain
-for (const change of oiChanges) {
-  const row = optionData.chain.find(
-    (x) => x.strike === change.strike
-  );
-  console.log("========== AFTER MERGE ==========");
+    const row = optionData.chain.find(
+      x => x.strike === change.strike
+    );
 
-console.table(
-  optionData.chain.map((x) => ({
-    Strike: x.strike,
-    CE: x.ce?.oiChange,
-    PE: x.pe?.oiChange,
-  }))
-);
+    if (!row) continue;
 
-  if (!row) continue;
+    if (row.ce) {
+      row.ce.oiChange = change.ce.oiDiff;
+    }
 
-  if (row.ce) {
-    row.ce.oiChange = change.ce.oiDiff;
+    if (row.pe) {
+      row.pe.oiChange = change.pe.oiDiff;
+    }
   }
-
-  if (row.pe) {
-    row.pe.oiChange = change.pe.oiDiff;
-  }
-}
-
-console.log("===== OPTION CHAIN AFTER MERGE =====");
-
-console.table(
-  optionData.chain.map((x) => ({
-    Strike: x.strike,
-    CE_OI_CHANGE: x.ce?.oiChange,
-    PE_OI_CHANGE: x.pe?.oiChange,
-  }))
-);
 
   console.log("==================================");
-  console.log("OI CHANGE ENGINE");
+  console.log("✅ Snapshot Compare Completed");
 
   console.table(
-    oiChanges.map((item) => ({
-      Strike: item.strike,
-      CE_OI_Change: item.ce.oiDiff,
-      CE_OI_Pct: item.ce.oiChangePct.toFixed(2) + "%",
-      PE_OI_Change: item.pe.oiDiff,
-      PE_OI_Pct: item.pe.oiChangePct.toFixed(2) + "%",
+    optionData.chain.map(x => ({
+      Strike: x.strike,
+      CE_OI_Change: x.ce?.oiChange,
+      PE_OI_Change: x.pe?.oiChange,
     }))
   );
-  classifiedSignals = classifyOIChanges(oiChanges);
-  console.log("===== CLASSIFIED SIGNALS =====");
-console.dir(classifiedSignals, { depth: null });
 
-console.log("==================================");
-console.log("OI CLASSIFIER");
-
-console.log("==================================");
-console.log("OI TREND");
-
-console.table(
-  oiTrend.map((x) => ({
-    Strike: x.strike,
-    CE: x.ce.trend,
-    PE: x.pe.trend,
-    CE_Pct: `${x.ce.pct}%`,
-    PE_Pct: `${x.pe.pct}%`,
-  }))
-);
-
-console.table(
-  classifiedSignals.map((item) => ({
-    Strike: item.strike,
-    CE: item.ce.signal,
-    PE: item.pe.signal,
-  }))
-);
 } else {
-  console.log("First Snapshot Created...");
+
+  console.log("==================================");
+  console.log("📸 First Snapshot - No Comparison");
 }
 
-saveSnapshot(optionData.chain);
-addSnapshot(optionData.chain);
+console.log("Previous Snapshot Rows:", getPreviousSnapshot()?.length);
+console.log("Current Chain Rows:", optionData.chain.length);
+// ======================================
+// Snapshot Scheduler
+// ======================================
 
-oiTrend = analyzeOITrend();
+
+// =========================================
+// Save Snapshot
+// =========================================
+if (takeSnapshot) {
+
+  console.log("==================================");
+  console.log("📸 Saving Current Snapshot");
+
+  saveSnapshot(optionData.chain);
+
+  addSnapshot(optionData.chain);
+
+  // Update Trend only when enough history exists
+  if (historySize() >= 2) {
+    oiTrend = analyzeOITrend();
+  } else {
+    oiTrend = [];
+  }
+
+  console.log("History Size :", historySize());
+  console.log("OI Trend Rows:", oiTrend.length);
+  console.log("==================================");
+
+} else {
+
+  console.log("==================================");
+  console.log("⏳ Waiting For Next Snapshot");
+  console.log(
+    "Last Snapshot:",
+    getLastSnapshotTime()?.toLocaleTimeString()
+  );
+}
 
 const oiLeaders = analyzeOILeaders(optionData.chain);
 
@@ -470,6 +466,7 @@ if (total > 0) {
   data.oiTrend.bearish = Math.round((bearish / total) * 100);
   data.oiTrend.neutral = Math.round((neutral / total) * 100);
 }
+data.oiSummary = oiSummary;
 
 return data;
 }

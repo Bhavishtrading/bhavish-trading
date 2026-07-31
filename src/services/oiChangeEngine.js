@@ -1,7 +1,6 @@
-// ==========================================
+// =======================================
 // OI Change Engine
-// Bhavish Trading V2
-// ==========================================
+// =======================================
 
 export function calculateOIChange(previousChain, currentChain) {
   if (!previousChain || !currentChain) {
@@ -9,17 +8,6 @@ export function calculateOIChange(previousChain, currentChain) {
   }
 
   const result = [];
-
-  const oldAtm = previousChain.find((x) => x.strike === 23900);
-const newAtm = currentChain.find((x) => x.strike === 23900);
-
-console.log("========== OI DEBUG ==========");
-console.log({
-  oldCE: oldAtm?.ce?.oi,
-  newCE: newAtm?.ce?.oi,
-  oldPE: oldAtm?.pe?.oi,
-  newPE: newAtm?.pe?.oi,
-});
 
   for (const current of currentChain) {
     const previous = previousChain.find(
@@ -41,39 +29,26 @@ console.log({
       strike: current.strike,
 
       ce: {
-        oldOI: ceOld,
-        newOI: ceNew,
+        oi: ceNew,
+        previousOI: ceOld,
         oiDiff: ceDiff,
         oiChangePct:
-          ceOld === 0
-            ? 0
-            : Number(((ceDiff / ceOld) * 100).toFixed(2)),
+          ceOld > 0
+            ? Number(((ceDiff / ceOld) * 100).toFixed(2))
+            : 0,
       },
 
       pe: {
-        oldOI: peOld,
-        newOI: peNew,
+        oi: peNew,
+        previousOI: peOld,
         oiDiff: peDiff,
         oiChangePct:
-          peOld === 0
-            ? 0
-            : Number(((peDiff / peOld) * 100).toFixed(2)),
+          peOld > 0
+            ? Number(((peDiff / peOld) * 100).toFixed(2))
+            : 0,
       },
     });
   }
-
-  console.log("==================================");
-  console.log("📊 OI CHANGE ENGINE");
-
-  console.table(
-    result.map((row) => ({
-      Strike: row.strike,
-      CE_Diff: row.ce.oiDiff,
-      PE_Diff: row.pe.oiDiff,
-      CE_Pct: row.ce.oiChangePct + "%",
-      PE_Pct: row.pe.oiChangePct + "%",
-    }))
-  );
 
   return result;
 }
