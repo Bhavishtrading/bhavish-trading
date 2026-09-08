@@ -12,13 +12,21 @@ export async function getLiveOptionData(niftyLTP) {
   // Get ATM ±10 Strikes
   const optionData = await getOptionChain(niftyLTP, 10);
 
-  // Build Symbols
-  const symbols = [];
+  // ======================================
+// Build Symbols (FULL EXPIRY)
+// ======================================
 
-  optionData.chain.forEach((item) => {
-    if (item.ce) symbols.push(`NFO:${item.ce.tradingsymbol}`);
-    if (item.pe) symbols.push(`NFO:${item.pe.tradingsymbol}`);
-  });
+const symbols = [];
+
+// Full expiry contains one instrument per row (CE or PE)
+optionData.fullChain.forEach((contract) => {
+  symbols.push(`NFO:${contract.tradingsymbol}`);
+});
+
+console.log("==================================");
+console.log("FULL EXPIRY CONTRACTS :", optionData.fullChain.length);
+console.log("QUOTE SYMBOLS :", symbols.length);
+console.log("==================================");
 
   console.log("==================================");
   console.log("Fetching Option Quotes...");
@@ -63,36 +71,63 @@ export async function getLiveOptionData(niftyLTP) {
 // Build Full Expiry Chain
 // ======================================
 
-const fullChain = optionData.fullChain.map((item) => {
-  const ceKey = item.ce ? `NFO:${item.ce.tradingsymbol}` : null;
-  const peKey = item.pe ? `NFO:${item.pe.tradingsymbol}` : null;
+// ======================================
+// Build Full Expiry Chain (Grouped)
+// ======================================
 
-  return {
-    strike: item.strike,
+const strikeMap = new Map();
 
-    ce: item.ce
-      ? {
-          symbol: item.ce.tradingsymbol,
-          token: item.ce.instrument_token,
-          ltp: quotes[ceKey]?.last_price ?? 0,
-          oi: quotes[ceKey]?.oi ?? 0,
-          volume: quotes[ceKey]?.volume ?? 0,
-          oiChange: 0,
-        }
-      : null,
+for (const contract of optionData.fullChain) {
+  const strike = Number(contract.strike);
 
-    pe: item.pe
-      ? {
-          symbol: item.pe.tradingsymbol,
-          token: item.pe.instrument_token,
-          ltp: quotes[peKey]?.last_price ?? 0,
-          oi: quotes[peKey]?.oi ?? 0,
-          volume: quotes[peKey]?.volume ?? 0,
-          oiChange: 0,
-        }
-      : null,
+  if (!strikeMap.has(strike)) {
+    strikeMap.set(strike, {
+      strike,
+      ce: null,
+      pe: null,
+    });
+  }
+
+  const row = strikeMap.get(strike);
+
+  const quoteKey = `NFO:${contract.tradingsymbol}`;
+  const quote = quotes[quoteKey];
+
+  const option = {
+    symbol: contract.tradingsymbol,
+    token: contract.instrument_token,
+    ltp: quote?.last_price ?? 0,
+    oi: quote?.oi ?? 0,
+    volume: quote?.volume ?? 0,
+    oiChange: 0,
   };
-});
+
+  if (contract.instrument_type === "CE") {
+    row.ce = option;
+  } else if (contract.instrument_type === "PE") {
+    row.pe = option;
+  }
+}
+
+const fullChain = [...strikeMap.values()].sort(
+  (a, b) => a.strike - b.strike
+);
+
+console.log("==================================");
+console.log("FULL CHAIN BUILT");
+console.log("Total Strikes :", fullChain.length);
+
+console.table(
+  fullChain.slice(0, 10).map((x) => ({
+    Strike: x.strike,
+    CE: !!x.ce,
+    PE: !!x.pe,
+    CE_OI: x.ce?.oi,
+    PE_OI: x.pe?.oi,
+  }))
+);
+
+console.log("==================================");
   // Build Chain
   const chain = optionData.chain.map((item) => {
     const ceKey = item.ce ? `NFO:${item.ce.tradingsymbol}` : null;
@@ -153,12 +188,14 @@ const fullChain = optionData.fullChain.map((item) => {
 
   console.log("==================================");
 
-  return {
+ return {
   atm: optionData.atm,
   expiry: optionData.expiry,
 
-  fullChain,
-
+  // Dashboard
   chain,
+
+  // Full Expiry (Analysis)
+  fullChain,
 };
 }

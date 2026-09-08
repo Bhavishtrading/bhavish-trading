@@ -2,6 +2,10 @@ import { marketModel } from "../lib/marketModel";
 import { getLiveMarketData } from "./marketDataAdapter";
 import { getYahooMarketData } from "./yahooEngine";
 
+import {
+  getNiftyHistoricalData
+} from "./zerodha/market";
+
 import { generateAISignal } from "./aiEngine";
 
 import { getLiveOptionData } from "./liveOptionEngine";
@@ -33,16 +37,58 @@ import {
 
 import { analyzeOIChange } from "./oiAnalyzer";
 import { getOIChangeSummary } from "./oiChangeSummary";
+import { calculateNiftyTechnicalIndicators } from "./nifty/technicalEngine";
+import { calculateNiftyLevels } from "./nifty/levelEngine";
+import { calculateNiftyIntelligence } from "./nifty/intelligenceEngine";
 
 export async function getMarketData() {
   console.log("==================================");
   console.log("📊 getMarketData Started");
 
   const live = await getLiveMarketData();
+  
+  const niftyHistorical = await getNiftyHistoricalData(
+  "5minute",
+  5
+);
+
+console.log(
+  "NIFTY HISTORICAL CANDLES:",
+  niftyHistorical.candles.length
+);
 
   // await testInstruments();
 
   const yahoo = await getYahooMarketData();
+  const niftyTechnical =
+  calculateNiftyTechnicalIndicators(
+    niftyHistorical.candles
+  );
+
+const niftyLevels =
+  calculateNiftyLevels(
+    niftyHistorical.candles,
+    live.nifty
+  );
+
+console.log("NIFTY TECHNICAL:", niftyTechnical);
+console.log("NIFTY LEVELS:", niftyLevels);
+const niftyIntelligence =
+  calculateNiftyIntelligence({
+    currentPrice: live.nifty,
+    technical: niftyTechnical,
+    levels: niftyLevels,
+    marketBias: {
+      confidence: 0,
+      reasons: [],
+    },
+    pcr: null,
+  });
+
+console.log(
+  "NIFTY INTELLIGENCE:",
+  niftyIntelligence
+);
 
   let optionData = null;
   let optionAnalysis = null;
@@ -77,8 +123,19 @@ console.log("==================================");
 
 
 
-    optionAnalysis = analyzeOptionChain(optionData.chain);
-    marketStructure = analyzeMarketStructure(optionData.chain);
+ const analysisChain =
+  optionData.fullChain && optionData.fullChain.length > 0
+    ? optionData.fullChain
+    : optionData.chain;
+
+console.log("==================================");
+console.log("ANALYSIS CHAIN");
+console.log("Rows :", analysisChain.length);
+console.log("==================================");
+
+optionAnalysis = analyzeOptionChain(analysisChain);
+
+marketStructure = analyzeMarketStructure(analysisChain);
 
 
 
@@ -378,6 +435,16 @@ marketBias = analyzeMarketBias({
   macdTrend: data.macd.trend,
   adx: data.adx.adx,
 });
+const finalNiftyIntelligence =
+  calculateNiftyIntelligence({
+    currentPrice: live.nifty,
+    technical: niftyTechnical,
+    levels: niftyLevels,
+    marketBias: marketBias,
+    pcr: data.pcr,
+  });
+
+data.niftyIntelligence = finalNiftyIntelligence;
 // ------------------------------
 // Market Structure
 // ------------------------------

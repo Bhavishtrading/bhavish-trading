@@ -1,401 +1,401 @@
 [
   {
-    "strike": 23900,
+    "strike": 23150,
     "ce": {
-      "symbol": "NIFTY2680423900CE",
-      "token": "16816386",
-      "ltp": 518.45,
-      "oi": 643955,
-      "volume": 584870,
-      "oiChange": -325
+      "symbol": "NIFTY2690823150CE",
+      "token": "10904834",
+      "ltp": 484.5,
+      "oi": 10855,
+      "volume": 34970,
+      "oiChange": 0
     },
     "pe": {
-      "symbol": "NIFTY2680423900PE",
-      "token": "16816642",
-      "ltp": 9.1,
-      "oi": 5807945,
-      "volume": 29188120,
-      "oiChange": -12870
+      "symbol": "NIFTY2690823150PE",
+      "token": "10905090",
+      "ltp": 0.05,
+      "oi": 2615210,
+      "volume": 66600495,
+      "oiChange": 0
+    }
+  },
+  {
+    "strike": 23200,
+    "ce": {
+      "symbol": "NIFTY2690823200CE",
+      "token": "10905346",
+      "ltp": 436.3,
+      "oi": 28730,
+      "volume": 167050,
+      "oiChange": 0
+    },
+    "pe": {
+      "symbol": "NIFTY2690823200PE",
+      "token": "10905602",
+      "ltp": 0.05,
+      "oi": 7813650,
+      "volume": 74618180,
+      "oiChange": -69810
+    }
+  },
+  {
+    "strike": 23250,
+    "ce": {
+      "symbol": "NIFTY2690823250CE",
+      "token": "10905858",
+      "ltp": 383.75,
+      "oi": 33865,
+      "volume": 218465,
+      "oiChange": 0
+    },
+    "pe": {
+      "symbol": "NIFTY2690823250PE",
+      "token": "10906114",
+      "ltp": 0.05,
+      "oi": 2749045,
+      "volume": 47512075,
+      "oiChange": -17680
+    }
+  },
+  {
+    "strike": 23300,
+    "ce": {
+      "symbol": "NIFTY2690823300CE",
+      "token": "10906370",
+      "ltp": 334.65,
+      "oi": 89700,
+      "volume": 1080235,
+      "oiChange": 0
+    },
+    "pe": {
+      "symbol": "NIFTY2690823300PE",
+      "token": "10906626",
+      "ltp": 0.05,
+      "oi": 7785310,
+      "volume": 100947730,
+      "oiChange": -45305
+    }
+  },
+  {
+    "strike": 23350,
+    "ce": {
+      "symbol": "NIFTY2690823350CE",
+      "token": "10906882",
+      "ltp": 284.85,
+      "oi": 89765,
+      "volume": 1300585,
+      "oiChange": -455
+    },
+    "pe": {
+      "symbol": "NIFTY2690823350PE",
+      "token": "10907394",
+      "ltp": 0.05,
+      "oi": 3984955,
+      "volume": 73795085,
+      "oiChange": -11245
+    }
+  },
+  {
+    "strike": 23400,
+    "ce": {
+      "symbol": "NIFTY2690823400CE",
+      "token": "10907650",
+      "ltp": 234.65,
+      "oi": 342550,
+      "volume": 7541495,
+      "oiChange": -1885
+    },
+    "pe": {
+      "symbol": "NIFTY2690823400PE",
+      "token": "10907906",
+      "ltp": 0.05,
+      "oi": 6609980,
+      "volume": 180643320,
+      "oiChange": -49010
+    }
+  },
+  {
+    "strike": 23450,
+    "ce": {
+      "symbol": "NIFTY2690823450CE",
+      "token": "10908162",
+      "ltp": 184.95,
+      "oi": 422110,
+      "volume": 11695320,
+      "oiChange": -24830
+    },
+    "pe": {
+      "symbol": "NIFTY2690823450PE",
+      "token": "10908418",
+      "ltp": 0.05,
+      "oi": 6355115,
+      "volume": 288970305,
+      "oiChange": -51415
+    }
+  },
+  {
+    "strike": 23500,
+    "ce": {
+      "symbol": "NIFTY2690823500CE",
+      "token": "10908674",
+      "ltp": 134.9,
+      "oi": 1417325,
+      "volume": 82024410,
+      "oiChange": -39000
+    },
+    "pe": {
+      "symbol": "NIFTY2690823500PE",
+      "token": "10909186",
+      "ltp": 0.05,
+      "oi": 10227555,
+      "volume": 680501250,
+      "oiChange": -158730
+    }
+  },
+  {
+    "strike": 23550,
+    "ce": {
+      "symbol": "NIFTY2690823550CE",
+      "token": "10909442",
+      "ltp": 85.05,
+      "oi": 2228005,
+      "volume": 150611955,
+      "oiChange": -76180
+    },
+    "pe": {
+      "symbol": "NIFTY2690823550PE",
+      "token": "10910978",
+      "ltp": 0.05,
+      "oi": 11253385,
+      "volume": 1010695725,
+      "oiChange": -293995
+    }
+  },
+  {
+    "strike": 23600,
+    "ce": {
+      "symbol": "NIFTY2690823600CE",
+      "token": "10911490",
+      "ltp": 35,
+      "oi": 8556340,
+      "volume": 670956715,
+      "oiChange": -262405
+    },
+    "pe": {
+      "symbol": "NIFTY2690823600PE",
+      "token": "10911746",
+      "ltp": 0.05,
+      "oi": 21304205,
+      "volume": 1777790885,
+      "oiChange": -108550
+    }
+  },
+  {
+    "strike": 23650,
+    "ce": {
+      "symbol": "NIFTY2690823650CE",
+      "token": "10912002",
+      "ltp": 0.05,
+      "oi": 30856020,
+      "volume": 1210115985,
+      "oiChange": 82420
+    },
+    "pe": {
+      "symbol": "NIFTY2690823650PE",
+      "token": "10912258",
+      "ltp": 14.85,
+      "oi": 9698390,
+      "volume": 1821657305,
+      "oiChange": -988325
+    }
+  },
+  {
+    "strike": 23700,
+    "ce": {
+      "symbol": "NIFTY2690823700CE",
+      "token": "10912514",
+      "ltp": 0.05,
+      "oi": 20339995,
+      "volume": 1722734650,
+      "oiChange": -1136785
+    },
+    "pe": {
+      "symbol": "NIFTY2690823700PE",
+      "token": "10912770",
+      "ltp": 64.9,
+      "oi": 4628910,
+      "volume": 1340734525,
+      "oiChange": -98280
+    }
+  },
+  {
+    "strike": 23750,
+    "ce": {
+      "symbol": "NIFTY2690823750CE",
+      "token": "10913026",
+      "ltp": 0.05,
+      "oi": 12428455,
+      "volume": 988820235,
+      "oiChange": -334230
+    },
+    "pe": {
+      "symbol": "NIFTY2690823750PE",
+      "token": "10913282",
+      "ltp": 114.7,
+      "oi": 1501175,
+      "volume": 424064420,
+      "oiChange": -36725
+    }
+  },
+  {
+    "strike": 23800,
+    "ce": {
+      "symbol": "NIFTY2690823800CE",
+      "token": "10913538",
+      "ltp": 0.05,
+      "oi": 12353770,
+      "volume": 904111715,
+      "oiChange": -152035
+    },
+    "pe": {
+      "symbol": "NIFTY2690823800PE",
+      "token": "10913794",
+      "ltp": 165.25,
+      "oi": 2542475,
+      "volume": 251600310,
+      "oiChange": -24895
+    }
+  },
+  {
+    "strike": 23850,
+    "ce": {
+      "symbol": "NIFTY2690823850CE",
+      "token": "10914050",
+      "ltp": 0.05,
+      "oi": 7089420,
+      "volume": 472125160,
+      "oiChange": -106795
+    },
+    "pe": {
+      "symbol": "NIFTY2690823850PE",
+      "token": "10914306",
+      "ltp": 214.7,
+      "oi": 1242800,
+      "volume": 62140975,
+      "oiChange": -6695
+    }
+  },
+  {
+    "strike": 23900,
+    "ce": {
+      "symbol": "NIFTY2690823900CE",
+      "token": "10914562",
+      "ltp": 0.05,
+      "oi": 8327735,
+      "volume": 466156340,
+      "oiChange": -93015
+    },
+    "pe": {
+      "symbol": "NIFTY2690823900PE",
+      "token": "10914818",
+      "ltp": 265.4,
+      "oi": 1175785,
+      "volume": 41483650,
+      "oiChange": -14365
     }
   },
   {
     "strike": 23950,
     "ce": {
-      "symbol": "NIFTY2680423950CE",
-      "token": "16816898",
-      "ltp": 468.45,
-      "oi": 264290,
-      "volume": 420225,
-      "oiChange": -325
+      "symbol": "NIFTY2690823950CE",
+      "token": "10915074",
+      "ltp": 0.05,
+      "oi": 6547320,
+      "volume": 286938080,
+      "oiChange": -8970
     },
     "pe": {
-      "symbol": "NIFTY2680423950PE",
-      "token": "16817154",
-      "ltp": 10.6,
-      "oi": 3830515,
-      "volume": 22859005,
-      "oiChange": -5460
+      "symbol": "NIFTY2690823950PE",
+      "token": "10915330",
+      "ltp": 315.7,
+      "oi": 495495,
+      "volume": 8164910,
+      "oiChange": -3120
     }
   },
   {
     "strike": 24000,
     "ce": {
-      "symbol": "NIFTY2680424000CE",
-      "token": "16817410",
-      "ltp": 422,
-      "oi": 2669095,
-      "volume": 4992910,
-      "oiChange": 455
+      "symbol": "NIFTY2690824000CE",
+      "token": "10915586",
+      "ltp": 0.05,
+      "oi": 13930735,
+      "volume": 309964395,
+      "oiChange": -87295
     },
     "pe": {
-      "symbol": "NIFTY2680424000PE",
-      "token": "16817666",
-      "ltp": 12.75,
-      "oi": 15276560,
-      "volume": 72531485,
-      "oiChange": -46865
+      "symbol": "NIFTY2690824000PE",
+      "token": "10915842",
+      "ltp": 365.2,
+      "oi": 1868945,
+      "volume": 13327860,
+      "oiChange": -8905
     }
   },
   {
     "strike": 24050,
     "ce": {
-      "symbol": "NIFTY2680424050CE",
-      "token": "16817922",
-      "ltp": 373.2,
-      "oi": 313950,
-      "volume": 1093105,
-      "oiChange": -1820
+      "symbol": "NIFTY2690824050CE",
+      "token": "10916098",
+      "ltp": 0.05,
+      "oi": 4963335,
+      "volume": 133541590,
+      "oiChange": -407420
     },
     "pe": {
-      "symbol": "NIFTY2680424050PE",
-      "token": "16818178",
-      "ltp": 15.2,
-      "oi": 3611075,
-      "volume": 30003805,
-      "oiChange": 13455
+      "symbol": "NIFTY2690824050PE",
+      "token": "10916354",
+      "ltp": 415.4,
+      "oi": 307125,
+      "volume": 1409590,
+      "oiChange": -1820
     }
   },
   {
     "strike": 24100,
     "ce": {
-      "symbol": "NIFTY2680424100CE",
-      "token": "16818434",
-      "ltp": 328,
-      "oi": 1461850,
-      "volume": 7011680,
-      "oiChange": -1300
+      "symbol": "NIFTY2690824100CE",
+      "token": "10916610",
+      "ltp": 0.05,
+      "oi": 7080125,
+      "volume": 157186705,
+      "oiChange": -22165
     },
     "pe": {
-      "symbol": "NIFTY2680424100PE",
-      "token": "16818690",
-      "ltp": 18.65,
-      "oi": 10087350,
-      "volume": 60025225,
-      "oiChange": 780
+      "symbol": "NIFTY2690824100PE",
+      "token": "10916866",
+      "ltp": 465.2,
+      "oi": 575900,
+      "volume": 2218385,
+      "oiChange": -1625
     }
   },
   {
     "strike": 24150,
     "ce": {
-      "symbol": "NIFTY2680424150CE",
-      "token": "16818946",
-      "ltp": 283.25,
-      "oi": 904605,
-      "volume": 6818370,
-      "oiChange": 1950
+      "symbol": "NIFTY2690824150CE",
+      "token": "10917122",
+      "ltp": 0.05,
+      "oi": 4635345,
+      "volume": 116798955,
+      "oiChange": -45110
     },
     "pe": {
-      "symbol": "NIFTY2680424150PE",
-      "token": "16819202",
-      "ltp": 23.8,
-      "oi": 5544890,
-      "volume": 39994695,
-      "oiChange": 28665
-    }
-  },
-  {
-    "strike": 24200,
-    "ce": {
-      "symbol": "NIFTY2680424200CE",
-      "token": "16838146",
-      "ltp": 239.85,
-      "oi": 4460820,
-      "volume": 47365370,
-      "oiChange": -21775
-    },
-    "pe": {
-      "symbol": "NIFTY2680424200PE",
-      "token": "16838658",
-      "ltp": 30.75,
-      "oi": 15714270,
-      "volume": 105948960,
-      "oiChange": 1235
-    }
-  },
-  {
-    "strike": 24250,
-    "ce": {
-      "symbol": "NIFTY2680424250CE",
-      "token": "16846338",
-      "ltp": 199.1,
-      "oi": 2668250,
-      "volume": 45668675,
-      "oiChange": -18460
-    },
-    "pe": {
-      "symbol": "NIFTY2680424250PE",
-      "token": "16846594",
-      "ltp": 39.75,
-      "oi": 11402690,
-      "volume": 78030355,
-      "oiChange": 36725
-    }
-  },
-  {
-    "strike": 24300,
-    "ce": {
-      "symbol": "NIFTY2680424300CE",
-      "token": "16846850",
-      "ltp": 161.6,
-      "oi": 8146580,
-      "volume": 168058150,
-      "oiChange": -42250
-    },
-    "pe": {
-      "symbol": "NIFTY2680424300PE",
-      "token": "16847106",
-      "ltp": 52.5,
-      "oi": 17372810,
-      "volume": 194729795,
-      "oiChange": 75985
-    }
-  },
-  {
-    "strike": 24350,
-    "ce": {
-      "symbol": "NIFTY2680424350CE",
-      "token": "16858114",
-      "ltp": 128.2,
-      "oi": 8285485,
-      "volume": 228305740,
-      "oiChange": -43550
-    },
-    "pe": {
-      "symbol": "NIFTY2680424350PE",
-      "token": "16858370",
-      "ltp": 68.6,
-      "oi": 14775540,
-      "volume": 199111835,
-      "oiChange": -49270
-    }
-  },
-  {
-    "strike": 24400,
-    "ce": {
-      "symbol": "NIFTY2680424400CE",
-      "token": "16858626",
-      "ltp": 98.9,
-      "oi": 13347555,
-      "volume": 240281730,
-      "oiChange": -39000
-    },
-    "pe": {
-      "symbol": "NIFTY2680424400PE",
-      "token": "16858882",
-      "ltp": 89.4,
-      "oi": 15927860,
-      "volume": 141891360,
-      "oiChange": 175435
-    }
-  },
-  {
-    "strike": 24450,
-    "ce": {
-      "symbol": "NIFTY2680424450CE",
-      "token": "16859650",
-      "ltp": 73.8,
-      "oi": 6815380,
-      "volume": 108907110,
-      "oiChange": 37310
-    },
-    "pe": {
-      "symbol": "NIFTY2680424450PE",
-      "token": "16859906",
-      "ltp": 114.1,
-      "oi": 3979690,
-      "volume": 38195820,
-      "oiChange": 76180
-    }
-  },
-  {
-    "strike": 24500,
-    "ce": {
-      "symbol": "NIFTY2680424500CE",
-      "token": "16860162",
-      "ltp": 53.1,
-      "oi": 12546235,
-      "volume": 147951375,
-      "oiChange": 22750
-    },
-    "pe": {
-      "symbol": "NIFTY2680424500PE",
-      "token": "16860418",
-      "ltp": 144.15,
-      "oi": 5217420,
-      "volume": 37163100,
-      "oiChange": 39910
-    }
-  },
-  {
-    "strike": 24550,
-    "ce": {
-      "symbol": "NIFTY2680424550CE",
-      "token": "16861954",
-      "ltp": 36.75,
-      "oi": 4891705,
-      "volume": 63421865,
-      "oiChange": -11375
-    },
-    "pe": {
-      "symbol": "NIFTY2680424550PE",
-      "token": "16862210",
-      "ltp": 177.8,
-      "oi": 982930,
-      "volume": 7410260,
-      "oiChange": 3705
-    }
-  },
-  {
-    "strike": 24600,
-    "ce": {
-      "symbol": "NIFTY2680424600CE",
-      "token": "16862978",
-      "ltp": 24.45,
-      "oi": 14023490,
-      "volume": 95754815,
-      "oiChange": -34645
-    },
-    "pe": {
-      "symbol": "NIFTY2680424600PE",
-      "token": "16863234",
-      "ltp": 215.65,
-      "oi": 1192685,
-      "volume": 7985055,
-      "oiChange": 9750
-    }
-  },
-  {
-    "strike": 24650,
-    "ce": {
-      "symbol": "NIFTY2680424650CE",
-      "token": "16865026",
-      "ltp": 16.15,
-      "oi": 5656170,
-      "volume": 48737455,
-      "oiChange": -31135
-    },
-    "pe": {
-      "symbol": "NIFTY2680424650PE",
-      "token": "16865282",
-      "ltp": 257,
-      "oi": 278460,
-      "volume": 1260480,
-      "oiChange": -1235
-    }
-  },
-  {
-    "strike": 24700,
-    "ce": {
-      "symbol": "NIFTY2680424700CE",
-      "token": "16866050",
-      "ltp": 10.5,
-      "oi": 9368515,
-      "volume": 50653590,
-      "oiChange": -26390
-    },
-    "pe": {
-      "symbol": "NIFTY2680424700PE",
-      "token": "16866306",
-      "ltp": 302.2,
-      "oi": 576420,
-      "volume": 1591330,
-      "oiChange": 4225
-    }
-  },
-  {
-    "strike": 24750,
-    "ce": {
-      "symbol": "NIFTY2680424750CE",
-      "token": "16868098",
-      "ltp": 7.25,
-      "oi": 3728465,
-      "volume": 29153865,
-      "oiChange": -21450
-    },
-    "pe": {
-      "symbol": "NIFTY2680424750PE",
-      "token": "16868354",
-      "ltp": 347.75,
-      "oi": 63375,
-      "volume": 269880,
-      "oiChange": -455
-    }
-  },
-  {
-    "strike": 24800,
-    "ce": {
-      "symbol": "NIFTY2680424800CE",
-      "token": "16869378",
-      "ltp": 5.05,
-      "oi": 6626620,
-      "volume": 38149085,
-      "oiChange": -15730
-    },
-    "pe": {
-      "symbol": "NIFTY2680424800PE",
-      "token": "16869634",
-      "ltp": 396.15,
-      "oi": 134745,
-      "volume": 497315,
-      "oiChange": 1365
-    }
-  },
-  {
-    "strike": 24850,
-    "ce": {
-      "symbol": "NIFTY2680424850CE",
-      "token": "16872962",
-      "ltp": 3.8,
-      "oi": 2473315,
-      "volume": 19048835,
-      "oiChange": 109980
-    },
-    "pe": {
-      "symbol": "NIFTY2680424850PE",
-      "token": "16873218",
-      "ltp": 444.05,
-      "oi": 29575,
-      "volume": 59020,
-      "oiChange": 585
-    }
-  },
-  {
-    "strike": 24900,
-    "ce": {
-      "symbol": "NIFTY2680424900CE",
-      "token": "16873474",
-      "ltp": 2.9,
-      "oi": 4014075,
-      "volume": 26071565,
-      "oiChange": 40885
-    },
-    "pe": {
-      "symbol": "NIFTY2680424900PE",
-      "token": "16873730",
-      "ltp": 492.55,
-      "oi": 42380,
-      "volume": 74620,
-      "oiChange": 325
+      "symbol": "NIFTY2690824150PE",
+      "token": "10917378",
+      "ltp": 515.75,
+      "oi": 314535,
+      "volume": 522730,
+      "oiChange": -845
     }
   }
 ]

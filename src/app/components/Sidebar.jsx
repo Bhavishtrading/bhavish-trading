@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Sidebar() {
   return (
     <aside className="w-64 min-h-screen bg-slate-900 border-r border-slate-700 p-6">
@@ -14,6 +16,13 @@ export default function Sidebar() {
         <div className="hover:bg-slate-800 p-3 rounded-lg cursor-pointer">
           📈 Live NIFTY
         </div>
+
+        <Link
+          href="/crude"
+          className="block hover:bg-slate-800 p-3 rounded-lg cursor-pointer"
+        >
+          🛢️ Crude Oil
+        </Link>
 
         <div className="hover:bg-slate-800 p-3 rounded-lg cursor-pointer">
           📉 OI Analysis

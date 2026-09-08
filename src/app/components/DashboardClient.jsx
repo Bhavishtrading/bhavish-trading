@@ -14,6 +14,7 @@ import AITradePanel from "./AITradePanel";
 import LiveOptionChain from "./LiveOptionChain";
 import OILeaders from "./OILeaders";
 import MarketBiasCard from "./MarketBiasCard";
+import NiftyIntelligence from "./NiftyIntelligence";
 
 export default function DashboardClient() {
   const [data, setData] = useState(null);
@@ -119,6 +120,9 @@ export default function DashboardClient() {
   <OILeaders data={data} />
 
   <MarketBiasCard bias={data.marketBias} />
+</div>
+<div className="mt-6">
+  <NiftyIntelligence intelligence={data.niftyIntelligence} />
 </div>
 
 <div className="mt-6">

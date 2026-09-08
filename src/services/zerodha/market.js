@@ -35,6 +35,66 @@ export async function getLiveQuote() {
     throw err;
   }
 }
+// =====================================================
+// GET NIFTY 50 HISTORICAL DATA
+// =====================================================
+export async function getNiftyHistoricalData(
+  interval = "5minute",
+  days = 5
+) {
+  try {
+    const accessToken = await getAccessToken();
+
+    if (!accessToken) {
+      throw new Error("Access token not found");
+    }
+
+    const kite = getKiteClient();
+    kite.setAccessToken(accessToken);
+
+    const instrumentToken = 256265;
+
+    const to = new Date();
+
+    const from = new Date();
+    from.setDate(from.getDate() - days);
+
+    const fromDate = from.toISOString().split("T")[0];
+    const toDate = to.toISOString().split("T")[0];
+
+    console.log("==================================");
+    console.log("NIFTY HISTORICAL DATA");
+    console.log("Instrument: NSE:NIFTY 50");
+    console.log("Token:", instrumentToken);
+    console.log("Interval:", interval);
+    console.log("From:", fromDate);
+    console.log("To:", toDate);
+    console.log("==================================");
+
+    const candles = await kite.getHistoricalData(
+      instrumentToken,
+      interval,
+      fromDate,
+      toDate,
+      false,
+      true
+    );
+
+    console.log("NIFTY CANDLE COUNT:", candles.length);
+
+    return {
+      tradingsymbol: "NIFTY 50",
+      instrumentToken,
+      interval,
+      candles,
+    };
+  } catch (err) {
+    console.error("NIFTY HISTORICAL ERROR =================");
+    console.error(err);
+
+    throw err;
+  }
+}
 
 export async function testInstruments() {
   try {
@@ -80,6 +140,129 @@ export async function getNFOInstruments() {
   } catch (err) {
     console.error("NFO Instrument Error");
     console.error(err);
+    throw err;
+  }
+}
+// =====================================================
+// GET LIVE CRUDE OIL QUOTE
+// =====================================================
+export async function getLiveCrudeQuote() {
+  try {
+    const accessToken = await getAccessToken();
+
+    if (!accessToken) {
+      throw new Error("Access token not found");
+    }
+
+    const kite = getKiteClient();
+    kite.setAccessToken(accessToken);
+
+    // Import current nearest-expiry Crude contract
+    const { getCurrentCrudeFuture } = await import("./instruments");
+
+    const contract = await getCurrentCrudeFuture();
+
+    const instrument = `MCX:${contract.tradingsymbol}`;
+
+    console.log("CRUDE INSTRUMENT:", instrument);
+
+    const quotes = await kite.getQuote([instrument]);
+
+    console.log("CRUDE QUOTE:", quotes);
+
+    const quote = quotes[instrument];
+
+    if (!quote) {
+      throw new Error("Crude Oil quote not found");
+    }
+
+    return {
+      tradingsymbol: contract.tradingsymbol,
+      instrumentToken: contract.instrument_token,
+      expiry: contract.expiry,
+
+      ltp: quote.last_price ?? null,
+
+      open: quote.ohlc?.open ?? null,
+      high: quote.ohlc?.high ?? null,
+      low: quote.ohlc?.low ?? null,
+      close: quote.ohlc?.close ?? null,
+
+      volume: quote.volume ?? null,
+      oi: quote.oi ?? null,
+
+      change: quote.change ?? null,
+    };
+  } catch (err) {
+    console.error("CRUDE MARKET ERROR =================");
+    console.error(err);
+
+    throw err;
+  }
+}
+// =====================================================
+// GET CRUDE OIL HISTORICAL DATA
+// =====================================================
+export async function getCrudeHistoricalData(
+  interval = "5minute",
+  days = 5
+) {
+  try {
+    const accessToken = await getAccessToken();
+
+    if (!accessToken) {
+      throw new Error("Access token not found");
+    }
+
+    const kite = getKiteClient();
+    kite.setAccessToken(accessToken);
+
+    const { getCurrentCrudeFuture } = await import("./instruments");
+
+    const contract = await getCurrentCrudeFuture();
+
+    const instrumentToken = contract.instrument_token;
+
+    // Zerodha expects YYYY-MM-DD
+    const to = new Date();
+
+    const from = new Date();
+    from.setDate(from.getDate() - days);
+
+    const fromDate = from.toISOString().split("T")[0];
+    const toDate = to.toISOString().split("T")[0];
+
+    console.log("==================================");
+    console.log("CRUDE HISTORICAL DATA");
+    console.log("Contract:", contract.tradingsymbol);
+    console.log("Token:", instrumentToken);
+    console.log("Interval:", interval);
+    console.log("From:", fromDate);
+    console.log("To:", toDate);
+    console.log("==================================");
+
+    const candles = await kite.getHistoricalData(
+  instrumentToken,
+  interval,
+  fromDate,
+  toDate,
+  false,
+  true
+);
+
+    console.log("CRUDE CANDLE COUNT:", candles.length);
+
+    return {
+      tradingsymbol: contract.tradingsymbol,
+      instrumentToken,
+      expiry: contract.expiry,
+      interval,
+      candles,
+    };
+  } catch (err) {
+    console.error("CRUDE HISTORICAL ERROR =================");
+    console.error(err);
+
     throw err;
   }
 }
