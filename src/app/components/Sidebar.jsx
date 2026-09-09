@@ -2,7 +2,16 @@ import Link from "next/link";
 
 export default function Sidebar() {
   return (
-    <aside className="w-64 min-h-screen bg-slate-900 border-r border-slate-700 p-6">
+    <aside
+      className="
+        hidden md:block
+        w-64 min-h-screen
+        bg-slate-900
+        border-r border-slate-700
+        p-6
+        shrink-0
+      "
+    >
       <h2 className="text-2xl font-bold text-blue-400 mb-8">
         Bhavish Trading
       </h2>

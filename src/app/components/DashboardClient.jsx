@@ -1,4 +1,5 @@
 "use client";
+
 import AISignalCard from "./AISignalCard";
 import { useEffect, useState } from "react";
 import EMATrendCard from "./EMATrendCard";
@@ -53,21 +54,26 @@ export default function DashboardClient() {
 
   if (!data) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white text-2xl">
+      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white text-xl md:text-2xl px-4 text-center">
         Loading Market Data...
       </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white">
-      <div className="flex">
+    <main className="min-h-screen w-full max-w-full overflow-x-hidden bg-slate-950 text-white">
+      <div className="flex w-full min-w-0">
         <Sidebar />
 
-        <div className="flex-1 p-8">
+        <div className="flex-1 min-w-0 w-full p-4 md:p-8">
           <Header />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* ============================= */}
+          {/* MARKET CARDS */}
+          {/* ============================= */}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+
             <DashboardCard
               title="NIFTY"
               value={data.nifty ?? "-"}
@@ -91,11 +97,17 @@ export default function DashboardClient() {
               value={data.status ?? "-"}
               color="text-green-400"
             />
+
             <AISignalCard ai={data.ai} />
+
             <EMATrendCard ema={data.ema} />
+
             <RSICard rsi={data.rsi} />
+
             <MACDCard macd={data.macd} />
+
             <ADXCard adx={data.adx} />
+
             <ATRCard atr={data.atr} />
 
             <DashboardCard
@@ -112,26 +124,51 @@ export default function DashboardClient() {
               }
               color="text-green-400"
             />
+
           </div>
-   
-<div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-  <AITradePanel ai={data.ai} />
 
-  <OILeaders data={data} />
+          {/* ============================= */}
+          {/* AI / OI / MARKET BIAS */}
+          {/* ============================= */}
 
-  <MarketBiasCard bias={data.marketBias} />
-</div>
-<div className="mt-6">
-  <NiftyIntelligence intelligence={data.niftyIntelligence} />
-</div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mt-6">
 
-<div className="mt-6">
-  <LiveOptionChain optionChain={data.optionChain} />
-</div>
+            <AITradePanel ai={data.ai} />
 
-<div className="mt-6">
-  <OIAnalysis data={data} />
-</div>
+            <OILeaders data={data} />
+
+            <MarketBiasCard bias={data.marketBias} />
+
+          </div>
+
+          {/* ============================= */}
+          {/* NIFTY INTELLIGENCE */}
+          {/* ============================= */}
+
+          <div className="mt-6 w-full min-w-0">
+            <NiftyIntelligence
+              intelligence={data.niftyIntelligence}
+            />
+          </div>
+
+          {/* ============================= */}
+          {/* LIVE OPTION CHAIN */}
+          {/* ============================= */}
+
+          <div className="mt-6 w-full min-w-0">
+            <LiveOptionChain
+              optionChain={data.optionChain}
+            />
+          </div>
+
+          {/* ============================= */}
+          {/* OI ANALYSIS */}
+          {/* ============================= */}
+
+          <div className="mt-6 w-full min-w-0">
+            <OIAnalysis data={data} />
+          </div>
+
         </div>
       </div>
     </main>
