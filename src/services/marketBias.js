@@ -53,38 +53,38 @@ export function analyzeMarketBias({
     reasons.push("Weak Trend");
   }
 
-  // ===========================
+// ===========================
 // OI ANALYSIS
 // ===========================
 
 if (oi.longBuildUp > 0) {
-  score += oi.longBuildUp * 10;
-  reasons.push(`Long Build-up (${oi.longBuildUp})`);
+  score += Math.min(15, oi.longBuildUp * 0.15);
+  reasons.push(`Long Build-up (${oi.longBuildUp}%)`);
 }
 
 if (oi.shortCovering > 0) {
-  score += oi.shortCovering * 8;
-  reasons.push(`Short Covering (${oi.shortCovering})`);
+  score += Math.min(10, oi.shortCovering * 0.10);
+  reasons.push(`Short Covering (${oi.shortCovering}%)`);
 }
 
 if (oi.shortBuildUp > 0) {
-  score -= oi.shortBuildUp * 10;
-  reasons.push(`Short Build-up (${oi.shortBuildUp})`);
+  score -= Math.min(15, oi.shortBuildUp * 0.15);
+  reasons.push(`Short Build-up (${oi.shortBuildUp}%)`);
 }
 
 if (oi.longUnwinding > 0) {
-  score -= oi.longUnwinding * 8;
-  reasons.push(`Long Unwinding (${oi.longUnwinding})`);
+  score -= Math.min(10, oi.longUnwinding * 0.10);
+  reasons.push(`Long Unwinding (${oi.longUnwinding}%)`);
 }
 
   // Market Structure
-  if (marketStructure?.supportStrength === "Strong") {
-    reasons.push("Strong Support");
-  }
+if (marketStructure?.supportStrength >= 70) {
+  reasons.push("Strong Support");
+}
 
-  if (marketStructure?.resistanceStrength === "Strong") {
-    reasons.push("Strong Resistance");
-  }
+if (marketStructure?.resistanceStrength >= 70) {
+  reasons.push("Strong Resistance");
+}
 
   let bias = "Neutral";
 

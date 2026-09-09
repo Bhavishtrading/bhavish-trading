@@ -49,33 +49,33 @@ export default function AITradePanel({ ai }) {
       </div>
 
       {/* Trade Levels */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mt-6">
+      <div className="grid grid-cols-2 gap-4 mt-6">
 
         <div className="bg-green-900/20 border border-green-700 rounded-lg p-5">
           <p className="text-gray-400">Entry</p>
           <h2 className="text-2xl text-green-400 font-bold mt-2">
-            {ai.entry}
+            {ai.entry ?? "-"}
           </h2>
         </div>
 
         <div className="bg-red-900/20 border border-red-700 rounded-lg p-5">
           <p className="text-gray-400">Stop Loss</p>
           <h2 className="text-2xl text-red-400 font-bold mt-2">
-            {ai.stopLoss}
+            {ai.stopLoss ?? "-"}
           </h2>
         </div>
 
         <div className="bg-blue-900/20 border border-blue-700 rounded-lg p-5">
           <p className="text-gray-400">Target 1</p>
           <h2 className="text-2xl text-blue-400 font-bold mt-2">
-            {ai.target1}
+            {ai.target1 ?? "-"}
           </h2>
         </div>
 
         <div className="bg-purple-900/20 border border-purple-700 rounded-lg p-5">
           <p className="text-gray-400">Target 2</p>
           <h2 className="text-2xl text-purple-400 font-bold mt-2">
-            {ai.target2}
+            {ai.target2 ?? "-"}
           </h2>
         </div>
 

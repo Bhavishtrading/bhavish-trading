@@ -382,49 +382,102 @@ export function calculateNiftyIntelligence({
     // ACTION
     // =================================================
 
-    let action = "WAIT";
+    // =================================================
+// ACTION
+// =================================================
 
-    if (
-      levels.breakout &&
-      trendStrength !== "WEAK"
-    ) {
-      action = "BUY CE";
-    } else if (
-      levels.breakdown &&
-      trendStrength !== "WEAK"
-    ) {
-      action = "BUY PE";
-    } else if (
-      bias === "BULLISH" &&
-      trendStrength === "STRONG"
-    ) {
-      action = "BUY CE / HOLD";
-    } else if (
-      bias === "BEARISH" &&
-      trendStrength === "STRONG"
-    ) {
-      action = "BUY PE / HOLD";
-    } else if (
-      bias === "BULLISH" &&
-      trendStrength === "MODERATE"
-    ) {
-      action = "BUY CE ON DIP";
-    } else if (
-      bias === "BEARISH" &&
-      trendStrength === "MODERATE"
-    ) {
-      action = "BUY PE ON RISE";
-    } else if (
-      levels.breakoutWatch
-    ) {
-      action = "WAIT FOR BREAKOUT";
-    } else if (
-      levels.breakdownWatch
-    ) {
-      action = "WAIT FOR BREAKDOWN";
-    } else {
-      action = "WAIT FOR CONFIRMATION";
-    }
+let action = "WAIT";
+
+// Check important level proximity
+const supportNearby =
+  levels.support !== null &&
+  levels.supportStrength >= 70 &&
+  currentPrice >= levels.support &&
+  currentPrice <=
+    levels.support + Math.max(currentPrice * 0.003, 50);
+
+const resistanceNearby =
+  levels.resistance !== null &&
+  levels.resistanceStrength >= 70 &&
+  currentPrice <= levels.resistance &&
+  currentPrice >=
+    levels.resistance - Math.max(currentPrice * 0.003, 50);
+
+// -------------------------------------------------
+// CONFIRMED BREAKOUT / BREAKDOWN
+// -------------------------------------------------
+
+if (
+  levels.breakout &&
+  trendStrength !== "WEAK"
+) {
+  action = "BUY CE";
+} else if (
+  levels.breakdown &&
+  trendStrength !== "WEAK"
+) {
+  action = "BUY PE";
+
+// -------------------------------------------------
+// BULLISH + RESISTANCE NEARBY
+// -------------------------------------------------
+
+} else if (
+  bias === "BULLISH" &&
+  resistanceNearby
+) {
+  action = "WAIT FOR RESISTANCE BREAK";
+
+// -------------------------------------------------
+// BEARISH + SUPPORT NEARBY
+// -------------------------------------------------
+
+} else if (
+  bias === "BEARISH" &&
+  supportNearby
+) {
+  action = "WAIT FOR SUPPORT BREAK";
+
+// -------------------------------------------------
+// NORMAL TREND ACTION
+// -------------------------------------------------
+
+} else if (
+  bias === "BULLISH" &&
+  trendStrength === "STRONG"
+) {
+  action = "BUY CE / HOLD";
+} else if (
+  bias === "BEARISH" &&
+  trendStrength === "STRONG"
+) {
+  action = "BUY PE / HOLD";
+} else if (
+  bias === "BULLISH" &&
+  trendStrength === "MODERATE"
+) {
+  action = "BUY CE ON DIP";
+} else if (
+  bias === "BEARISH" &&
+  trendStrength === "MODERATE"
+) {
+  action = "BUY PE ON RISE";
+
+// -------------------------------------------------
+// WATCH CONDITIONS
+// -------------------------------------------------
+
+} else if (
+  levels.breakoutWatch
+) {
+  action = "WAIT FOR BREAKOUT";
+} else if (
+  levels.breakdownWatch
+) {
+  action = "WAIT FOR BREAKDOWN";
+} else {
+  action = "WAIT FOR CONFIRMATION";
+}
 
     // =================================================
     // RISK

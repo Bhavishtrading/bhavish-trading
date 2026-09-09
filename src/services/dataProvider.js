@@ -459,8 +459,9 @@ if (marketStructure) {
 // ------------------------------
 
 if (marketBias) {
-  data.marketBias.signal = marketBias.signal;
+  data.marketBias.signal = marketBias.bias;
   data.marketBias.confidence = marketBias.confidence;
+  data.marketBias.score = marketBias.score;
   data.marketBias.reasons = marketBias.reasons;
 }
 
@@ -482,7 +483,9 @@ console.table(marketBias);
   macdSignal: data.macd.signal,
   adx: data.adx.adx,
   atr: data.atr.atr,
-  marketBias,
+support: niftyLevels.support,
+resistance: niftyLevels.resistance,
+marketBias,
 });
 
   data.ai.signal = ai.signal;
@@ -490,6 +493,11 @@ console.table(marketBias);
   data.ai.risk = ai.risk;
   data.ai.score = ai.score;
   data.ai.reasons = ai.reasons;
+
+  data.ai.entry = ai.entry;
+  data.ai.stopLoss = ai.stopLoss;
+  data.ai.target1 = ai.target1;
+  data.ai.target2 = ai.target2;
 
   console.log("==================================");
   console.log("LIVE OI SUMMARY");
