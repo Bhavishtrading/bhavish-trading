@@ -104,7 +104,7 @@ export default function DashboardClient() {
 
             <RSICard rsi={data.rsi} />
 
-            <MACDCard macd={data.macd} />
+            <MACDCard macd={data.macd15m ?? data.macd} />
 
             <ADXCard adx={data.adx} />
 

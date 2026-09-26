@@ -288,6 +288,8 @@ console.log("History Size:", historySize());
   }
 
   const data = structuredClone(marketModel);
+  
+  data.macd15m = niftyTechnical?.macd15m ?? null;
 
 const oiLeaders = analyzeOILeaders(optionData?.chain ?? []);
 
