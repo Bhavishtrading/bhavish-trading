@@ -142,6 +142,11 @@ function calculateRSI(values, period = 14) {
 // Kept for existing dashboard compatibility
 // =====================================================
 
+// =====================================================
+// 5M MACD 12,26,9
+// Includes Fresh Crossover Detection
+// =====================================================
+
 function calculateMACD(values) {
   if (!values || values.length < 35) {
     return {
@@ -149,14 +154,33 @@ function calculateMACD(values) {
       signal: null,
       histogram: null,
       trend: "Neutral",
+
+      crossoverDetected: false,
+      crossoverDirection: "None",
+
+      previousMacd: null,
+      previousSignal: null,
     };
   }
+
+  // -----------------------------------------------
+  // EMA 12
+  // -----------------------------------------------
 
   const ema12Series =
     calculateEMASeries(values, 12);
 
+  // -----------------------------------------------
+  // EMA 26
+  // -----------------------------------------------
+
   const ema26Series =
     calculateEMASeries(values, 26);
+
+  // -----------------------------------------------
+  // MACD LINE
+  // MACD = EMA12 - EMA26
+  // -----------------------------------------------
 
   const macdValues = [];
 
@@ -168,9 +192,13 @@ function calculateMACD(values) {
       continue;
     }
 
-    macdValues.push(
-      ema12Series[i] - ema26Series[i]
-    );
+    macdValues.push({
+      macd:
+        ema12Series[i] -
+        ema26Series[i],
+
+      originalIndex: i,
+    });
   }
 
   if (macdValues.length < 9) {
@@ -179,50 +207,192 @@ function calculateMACD(values) {
       signal: null,
       histogram: null,
       trend: "Neutral",
+
+      crossoverDetected: false,
+      crossoverDirection: "None",
+
+      previousMacd: null,
+      previousSignal: null,
     };
   }
 
+  // -----------------------------------------------
+  // SIGNAL LINE = EMA 9 of MACD
+  // -----------------------------------------------
+
+  const macdOnly =
+    macdValues.map(
+      (item) => item.macd
+    );
+
   const signalSeries =
-    calculateEMASeries(macdValues, 9);
+    calculateEMASeries(
+      macdOnly,
+      9
+    );
 
-  const lastIndex =
-    signalSeries.length - 1;
+  const macdSignalSeries = [];
 
-  const signal =
-    signalSeries[lastIndex];
-
-  const macd =
-    macdValues[lastIndex];
-
-  if (
-    signal === null ||
-    signal === undefined
+  for (
+    let i = 0;
+    i < macdValues.length;
+    i++
   ) {
+    const signal =
+      signalSeries[i];
+
+    if (
+      signal === null ||
+      signal === undefined
+    ) {
+      continue;
+    }
+
+    const macd =
+      macdValues[i].macd;
+
+    macdSignalSeries.push({
+      macd,
+      signal,
+      histogram:
+        macd - signal,
+
+      originalIndex:
+        macdValues[i].originalIndex,
+    });
+  }
+
+  if (macdSignalSeries.length < 2) {
     return {
       macd: null,
       signal: null,
       histogram: null,
       trend: "Neutral",
+
+      crossoverDetected: false,
+      crossoverDirection: "None",
+
+      previousMacd: null,
+      previousSignal: null,
     };
   }
 
-  const histogram =
-    macd - signal;
+  // -----------------------------------------------
+  // CURRENT / PREVIOUS
+  // -----------------------------------------------
+
+  const current =
+    macdSignalSeries[
+      macdSignalSeries.length - 1
+    ];
+
+  const previous =
+    macdSignalSeries[
+      macdSignalSeries.length - 2
+    ];
+
+  // -----------------------------------------------
+  // FRESH BULLISH CROSSOVER
+  //
+  // Previous MACD <= Previous Signal
+  // Current MACD  >  Current Signal
+  // -----------------------------------------------
+
+  const bullishCrossover =
+    previous.macd <=
+      previous.signal &&
+    current.macd >
+      current.signal;
+
+  // -----------------------------------------------
+  // FRESH BEARISH CROSSOVER
+  //
+  // Previous MACD >= Previous Signal
+  // Current MACD  <  Current Signal
+  // -----------------------------------------------
+
+  const bearishCrossover =
+    previous.macd >=
+      previous.signal &&
+    current.macd <
+      current.signal;
+
+  // -----------------------------------------------
+  // CROSSOVER RESULT
+  // -----------------------------------------------
+
+  let crossoverDetected =
+    false;
+
+  let crossoverDirection =
+    "None";
+
+  let crossover =
+    "No Fresh Crossover";
+
+  if (bullishCrossover) {
+    crossoverDetected = true;
+    crossoverDirection = "Bullish";
+    crossover = "Bullish Crossover";
+  }
+
+  else if (bearishCrossover) {
+    crossoverDetected = true;
+    crossoverDirection = "Bearish";
+    crossover = "Bearish Crossover";
+  }
+
+  // -----------------------------------------------
+  // TREND
+  // -----------------------------------------------
+
+  let trend = "Neutral";
+
+  if (current.macd > current.signal) {
+    trend = "Bullish";
+  }
+
+  else if (current.macd < current.signal) {
+    trend = "Bearish";
+  }
+
+  // -----------------------------------------------
+  // RETURN
+  // -----------------------------------------------
 
   return {
-    macd,
-    signal,
-    histogram,
+    macd:
+      Number(
+        current.macd.toFixed(3)
+      ),
 
-    trend:
-      histogram > 0
-        ? "Bullish"
-        : histogram < 0
-        ? "Bearish"
-        : "Neutral",
+    signal:
+      Number(
+        current.signal.toFixed(3)
+      ),
+
+    histogram:
+      Number(
+        current.histogram.toFixed(3)
+      ),
+
+    trend,
+
+    crossover,
+    crossoverDetected,
+    crossoverDirection,
+
+    previousMacd:
+      Number(
+        previous.macd.toFixed(3)
+      ),
+
+    previousSignal:
+      Number(
+        previous.signal.toFixed(3)
+      ),
   };
 }
-
 
 // =====================================================
 // 5M -> 15M CANDLE AGGREGATION

@@ -10,12 +10,14 @@ import RSICard from "./RSICard";
 import MACDCard from "./MACDCard";
 import ADXCard from "./ADXCard";
 import ATRCard from "./ATRCard";
+import VWAPCard from "./VWAPCard";
 import OIAnalysis from "./OIAnalysis";
 import AITradePanel from "./AITradePanel";
 import LiveOptionChain from "./LiveOptionChain";
 import OILeaders from "./OILeaders";
 import MarketBiasCard from "./MarketBiasCard";
 import NiftyIntelligence from "./NiftyIntelligence";
+import BhavishScoreCard from "./BhavishScoreCard";
 
 export default function DashboardClient() {
   const [data, setData] = useState(null);
@@ -102,6 +104,8 @@ export default function DashboardClient() {
 
             <EMATrendCard ema={data.ema} />
 
+            <BhavishScoreCard score={data.bhavishScore} />
+
             <RSICard rsi={data.rsi} />
 
             <MACDCard macd={data.macd15m ?? data.macd} />
@@ -109,11 +113,67 @@ export default function DashboardClient() {
             <ADXCard adx={data.adx} />
 
             <ATRCard atr={data.atr} />
+            <VWAPCard
+  vwap={data.vwap}
+/>
 
-            <DashboardCard
-              title="PCR"
-              value={data.pcr ?? "-"}
-            />
+            
+
+            <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
+  <h3 className="text-slate-400 text-lg">
+    PCR
+  </h3>
+
+  <div className="text-4xl font-bold mt-3 text-white">
+    {data.pcrDetails?.value ?? data.pcr ?? "-"}
+  </div>
+
+  <div className="mt-5 space-y-3">
+
+    <div className="flex justify-between items-center">
+      <span className="text-slate-400">
+        CE OI
+      </span>
+
+      <span className="text-white font-semibold">
+        {Number(
+          data.pcrDetails?.ceOI ?? 0
+        ).toLocaleString("en-IN")}
+      </span>
+    </div>
+
+    <div className="flex justify-between items-center">
+      <span className="text-slate-400">
+        PE OI
+      </span>
+
+      <span className="text-white font-semibold">
+        {Number(
+          data.pcrDetails?.peOI ?? 0
+        ).toLocaleString("en-IN")}
+      </span>
+    </div>
+
+    <div className="flex justify-between items-center">
+      <span className="text-slate-400">
+        Expiry
+      </span>
+
+      <span className="text-white font-semibold">
+        {data.pcrDetails?.expiry
+  ? new Date(
+      data.pcrDetails.expiry
+    ).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    })
+  : "-"}
+      </span>
+    </div>
+
+  </div>
+</div>
 
             <DashboardCard
               title="Market Strength"

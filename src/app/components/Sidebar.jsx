@@ -33,6 +33,13 @@ export default function Sidebar() {
           🛢️ Crude Oil
         </Link>
 
+        <Link
+  href="/silver"
+  className="block hover:bg-slate-800 p-3 rounded-lg cursor-pointer"
+>
+  🥈 Silver
+</Link>
+
         <div className="hover:bg-slate-800 p-3 rounded-lg cursor-pointer">
           📉 OI Analysis
         </div>

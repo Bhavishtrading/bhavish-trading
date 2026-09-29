@@ -16,7 +16,7 @@ import { classifyOIChanges } from "./oiClassifier";
 
 import { analyzeMarketStructure } from "./marketStructure";
 import { analyzeMarketBias } from "./marketBias";
-
+import { getNiftyFutureVWAP } from "@/services/zerodha/niftyFutureVWAP";
 import { analyzeOITrend } from "./oiTrendEngine";
 import { analyzeOILeaders } from "./oiLeaders";
 import {
@@ -40,6 +40,7 @@ import { getOIChangeSummary } from "./oiChangeSummary";
 import { calculateNiftyTechnicalIndicators } from "./nifty/technicalEngine";
 import { calculateNiftyLevels } from "./nifty/levelEngine";
 import { calculateNiftyIntelligence } from "./nifty/intelligenceEngine";
+import { calculateBhavishScore } from "@/services/bhavishScoreEngine";
 
 export async function getMarketData() {
   console.log("==================================");
@@ -56,7 +57,7 @@ console.log(
   "NIFTY HISTORICAL CANDLES:",
   niftyHistorical.candles.length
 );
-
+const niftyFutureVWAP = await getNiftyFutureVWAP();
   // await testInstruments();
 
   const yahoo = await getYahooMarketData();
@@ -64,6 +65,8 @@ console.log(
   calculateNiftyTechnicalIndicators(
     niftyHistorical.candles
   );
+
+
 
 const niftyLevels =
   calculateNiftyLevels(
@@ -154,12 +157,12 @@ console.table(marketStructure);
  // =========================================
 // Snapshot Compare
 // =========================================
-if (hasSnapshot()) {
+if (await hasSnapshot()) {
 
   console.log("==================================");
   console.log("📊 Comparing Previous Snapshot");
 
-  const previousSnapshot = getPreviousSnapshot();
+  const previousSnapshot = await getPreviousSnapshot();
 
   console.log("Previous Snapshot Rows:", previousSnapshot?.length ?? 0);
   console.log("Current Snapshot Rows :", optionData.chain.length);
@@ -240,7 +243,7 @@ if (takeSnapshot) {
   console.log("==================================");
   console.log("📸 Saving Current Snapshot");
 
-  saveSnapshot(optionData.chain);
+  await saveSnapshot(optionData.chain);
 
   addSnapshot(optionData.chain);
 
@@ -288,7 +291,8 @@ console.log("History Size:", historySize());
   }
 
   const data = structuredClone(marketModel);
-  
+  data.vwap = niftyFutureVWAP ?? null;
+
   data.macd15m = niftyTechnical?.macd15m ?? null;
 
 const oiLeaders = analyzeOILeaders(optionData?.chain ?? []);
@@ -305,21 +309,56 @@ data.oiLeaders = {
   data.vix = live.vix;
   data.close = live.close;
 
-  if (optionAnalysis) {
-    data.pcr = optionAnalysis.pcr;
+ if (optionAnalysis) {
+  data.pcr = optionAnalysis.pcr;
 
-    data.optionChain.atm = optionData.atm;
-   data.optionChain.maxPain = optionAnalysis.maxPain;
+  // =========================================
+  // NIFTY PCR DETAILS
+  // =========================================
 
-    data.optionChain.highestCallOI =
-      optionAnalysis.resistance;
+  data.pcrDetails = {
+    value: optionAnalysis.pcr ?? 0,
 
-    data.optionChain.highestPutOI =
-      optionAnalysis.support;
-  } else {
-    data.pcr = 0;
-  }
+    ceOI:
+      optionAnalysis.totalCallOI ??
+      optionAnalysis.totalCEOI ??
+      optionAnalysis.ceOI ??
+      0,
 
+    peOI:
+      optionAnalysis.totalPutOI ??
+      optionAnalysis.totalPEOI ??
+      optionAnalysis.peOI ??
+      0,
+
+    expiry:
+      optionData.expiry ??
+      "",
+  };
+
+  data.optionChain.atm =
+    optionData.atm;
+
+  data.optionChain.maxPain =
+    optionAnalysis.maxPain;
+
+  data.optionChain.highestCallOI =
+    optionAnalysis.resistance;
+
+  data.optionChain.highestPutOI =
+    optionAnalysis.support;
+
+} else {
+
+  data.pcr = 0;
+
+  data.pcrDetails = {
+    value: 0,
+    ceOI: 0,
+    peOI: 0,
+    expiry: "",
+  };
+}
   data.strength = 88;
 
   data.momentum.buying = 82;
@@ -474,7 +513,65 @@ console.table(marketBias);
   // --------------------------------
   // AI Engine
   // --------------------------------
+// ======================================================
+// BHAVISH AI SCORE
+// ======================================================
+console.log("===== BHAVISH VWAP DEBUG =====");
+console.log("Technical VWAP:", niftyTechnical?.vwap);
+console.log("VWAP Value:", niftyTechnical?.vwap?.value);
+console.log("EMA:", data.ema);
+console.log("Price:", live.nifty);
+console.log("==============================");
+const bhavishScore = calculateBhavishScore({
+  price: live.nifty,
 
+  ema: data.ema,
+
+  macd5m: niftyTechnical?.macd ?? null,
+
+  adx: data.adx,
+
+  rsi: data.rsi,
+
+  oi: {
+    totalCEOI:
+      optionAnalysis?.totalCEOI ??
+      optionAnalysis?.ceOI ??
+      null,
+
+    totalPEOI:
+      optionAnalysis?.totalPEOI ??
+      optionAnalysis?.peOI ??
+      null,
+
+    ceOIChange:
+      optionAnalysis?.ceOIChange ??
+      null,
+
+    peOIChange:
+      optionAnalysis?.peOIChange ??
+      null,
+  },
+
+  pcr: data.pcr,
+
+  volume: {
+    ratio:
+      niftyTechnical?.volumeRatio ??
+      null,
+
+    candleDirection:
+      niftyTechnical?.candleDirection ??
+      "neutral",
+  },
+});
+
+console.log("===== BHAVISH AI SCORE =====");
+console.log("Score:", bhavishScore.score);
+console.log("State:", bhavishScore.state);
+console.log("Action:", bhavishScore.action);
+console.log("Factors:", bhavishScore.factors);
+console.log("============================");
   const ai = generateAISignal({
   price: data.nifty,
   ema9: data.ema.ema9,
@@ -544,6 +641,11 @@ if (total > 0) {
   data.oiTrend.neutral = Math.round((neutral / total) * 100);
 }
 data.oiSummary = oiSummary;
+
+// ======================================================
+// BHAVISH AI SCORE
+// ======================================================
+data.bhavishScore = bhavishScore;
 
 return data;
 }
