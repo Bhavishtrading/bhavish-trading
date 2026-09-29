@@ -57,6 +57,9 @@ export async function getSilver5MCandles() {
     const fromDate =
       new Date(now);
 
+    // Keep 7 days of historical data
+    // so EMA50 / MACD / RSI / ADX
+    // have enough candles.
     fromDate.setDate(
       fromDate.getDate() - 7
     );
@@ -90,12 +93,23 @@ export async function getSilver5MCandles() {
     }
 
     // =====================================================
+    // SORT ALL HISTORICAL CANDLES
+    // =====================================================
+
+    const sortedCandles =
+      [...candles].sort(
+        (a, b) =>
+          new Date(a.date) -
+          new Date(b.date)
+      );
+
+    // =====================================================
     // FIND LATEST TRADING SESSION
     // =====================================================
 
     const latestCandle =
-      candles[
-        candles.length - 1
+      sortedCandles[
+        sortedCandles.length - 1
       ];
 
     const latestDate =
@@ -113,11 +127,15 @@ export async function getSilver5MCandles() {
       latestDate.getDate();
 
     // =====================================================
-    // FILTER CURRENT SESSION CANDLES
+    // CURRENT SESSION CANDLES
+    //
+    // Used only for current-session information.
+    // Technical indicators will use ALL historical
+    // candles below.
     // =====================================================
 
     const sessionCandles =
-      candles.filter(
+      sortedCandles.filter(
         (candle) => {
           const date =
             new Date(
@@ -258,7 +276,10 @@ export async function getSilver5MCandles() {
       expiry:
         future.expiry,
 
-      candles:
+      totalHistoricalCandles:
+        sortedCandles.length,
+
+      currentSessionCandles:
         sessionCandles.length,
 
       livePrice:
@@ -306,7 +327,6 @@ export async function getSilver5MCandles() {
 
       // CURRENT LIVE ZERODHA PRICE
       price:
-
         price,
 
       // LAST 5M CANDLE CLOSE
@@ -322,7 +342,15 @@ export async function getSilver5MCandles() {
           ).toFixed(2)
         ),
 
+      // IMPORTANT:
+      // Return ALL historical candles
+      // for technical calculations.
       candles:
+        sortedCandles,
+
+      // Keep today's session separately
+      // for UI/session-specific logic.
+      sessionCandles:
         sessionCandles,
     };
 
