@@ -22,6 +22,10 @@ import BhavishScoreCard from "./BhavishScoreCard";
 export default function DashboardClient() {
   const [data, setData] = useState(null);
 
+  // ============================================
+  // FETCH MARKET DATA
+  // ============================================
+
   async function fetchMarketData() {
     try {
       const response = await fetch("/api/market", {
@@ -44,6 +48,10 @@ export default function DashboardClient() {
     }
   }
 
+  // ============================================
+  // AUTO REFRESH
+  // ============================================
+
   useEffect(() => {
     fetchMarketData();
 
@@ -54,6 +62,10 @@ export default function DashboardClient() {
     return () => clearInterval(interval);
   }, []);
 
+  // ============================================
+  // LOADING
+  // ============================================
+
   if (!data) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white text-xl md:text-2xl px-4 text-center">
@@ -62,19 +74,56 @@ export default function DashboardClient() {
     );
   }
 
+  // ============================================
+  // PCR / OI CALCULATIONS
+  // ============================================
+
+  const ceOI = Number(
+    data.pcrDetails?.ceOI ?? 0
+  );
+
+  const peOI = Number(
+    data.pcrDetails?.peOI ?? 0
+  );
+
+  // PE OI - CE OI
+  const oiDifference = peOI - ceOI;
+
+  const oiDifferenceColor =
+    oiDifference > 0
+      ? "text-green-400"
+      : oiDifference < 0
+      ? "text-red-400"
+      : "text-yellow-400";
+
   return (
     <main className="min-h-screen w-full max-w-full overflow-x-hidden bg-slate-950 text-white">
+
       <div className="flex w-full min-w-0">
+
+        {/* ======================================== */}
+        {/* SIDEBAR */}
+        {/* ======================================== */}
+
         <Sidebar />
 
         <div className="flex-1 min-w-0 w-full p-4 md:p-8">
+
+          {/* ====================================== */}
+          {/* HEADER */}
+          {/* ====================================== */}
+
           <Header />
 
-          {/* ============================= */}
+          {/* ====================================== */}
           {/* MARKET CARDS */}
-          {/* ============================= */}
+          {/* ====================================== */}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+
+            {/* ==================================== */}
+            {/* NIFTY + MARKET STATUS */}
+            {/* ==================================== */}
 
             <DashboardCard
               title="NIFTY"
@@ -87,93 +136,195 @@ export default function DashboardClient() {
               percent={
                 data.close
                   ? (
-                      ((data.nifty - data.close) / data.close) *
+                      ((data.nifty - data.close) /
+                        data.close) *
                       100
                     ).toFixed(2)
                   : "-"
               }
+              secondaryTitle="Market Status"
+              secondaryValue={data.status ?? "-"}
+              secondaryColor={
+                data.status === "Bullish"
+                  ? "text-green-400"
+                  : data.status === "Bearish"
+                  ? "text-red-400"
+                  : "text-yellow-400"
+              }
             />
 
-            <DashboardCard
-              title="Market Status"
-              value={data.status ?? "-"}
-              color="text-green-400"
+            {/* ==================================== */}
+            {/* BHAVISH SCORE */}
+            {/* ==================================== */}
+
+            <BhavishScoreCard
+              score={data.bhavishScore}
             />
 
-            <AISignalCard ai={data.ai} />
+            {/* ==================================== */}
+            {/* EMA TREND */}
+            {/* ==================================== */}
 
-            <EMATrendCard ema={data.ema} />
+            <EMATrendCard
+              ema={data.ema}
+            />
 
-            <BhavishScoreCard score={data.bhavishScore} />
+            {/* ==================================== */}
+            {/* AI SIGNAL */}
+            {/* ==================================== */}
 
-            <RSICard rsi={data.rsi} />
+            <AISignalCard
+              ai={data.ai}
+            />
 
-            <MACDCard macd={data.macd15m ?? data.macd} />
+            {/* ==================================== */}
+            {/* RSI */}
+            {/* ==================================== */}
 
-            <ADXCard adx={data.adx} />
+            <RSICard
+              rsi={data.rsi}
+            />
 
-            <ATRCard atr={data.atr} />
+            {/* ==================================== */}
+            {/* MACD */}
+            {/* ==================================== */}
+
+            <MACDCard
+              macd={
+                data.macd15m ??
+                data.macd
+              }
+            />
+
+            {/* ==================================== */}
+            {/* PCR */}
+            {/* ==================================== */}
+
+            <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-lg hover:border-green-500 transition-all duration-300">
+
+              {/* PCR TITLE */}
+
+              <h3 className="text-slate-300 text-sm uppercase tracking-wide font-semibold">
+                PCR
+              </h3>
+
+              {/* PCR VALUE */}
+
+              <div className="text-4xl font-bold mt-4 text-yellow-400">
+                {data.pcrDetails?.value ??
+                  data.pcr ??
+                  "-"}
+              </div>
+
+              {/* PCR DATA */}
+
+              <div className="mt-6 space-y-4">
+
+                {/* CE OI */}
+
+                <div className="flex justify-between items-center gap-4">
+
+                  <span className="text-slate-300 text-sm">
+                    CE OI
+                  </span>
+
+                  <span className="text-green-400 font-bold text-sm">
+                    {ceOI.toLocaleString(
+                      "en-IN"
+                    )}
+                  </span>
+
+                </div>
+
+                {/* PE OI */}
+
+                <div className="flex justify-between items-center gap-4">
+
+                  <span className="text-slate-300 text-sm">
+                    PE OI
+                  </span>
+
+                  <span className="text-red-400 font-bold text-sm">
+                    {peOI.toLocaleString(
+                      "en-IN"
+                    )}
+                  </span>
+
+                </div>
+
+                {/* OI DIFFERENCE */}
+
+                <div className="flex justify-between items-center gap-4">
+
+                  <span className="text-slate-300 text-sm">
+                    OI Difference
+                  </span>
+
+                  <span
+                    className={`${oiDifferenceColor} font-bold text-sm`}
+                  >
+                    {oiDifference.toLocaleString(
+                      "en-IN"
+                    )}
+                  </span>
+
+                </div>
+
+                {/* EXPIRY */}
+
+                <div className="flex justify-between items-center gap-4">
+
+                  <span className="text-slate-300 text-sm">
+                    Expiry
+                  </span>
+
+                  <span className="text-cyan-400 font-semibold text-sm">
+                    {data.pcrDetails?.expiry
+                      ? new Date(
+                          data.pcrDetails.expiry
+                        ).toLocaleDateString(
+                          "en-IN",
+                          {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          }
+                        )
+                      : "-"}
+                  </span>
+
+                </div>
+
+              </div>
+            </div>
+
+            {/* ==================================== */}
+            {/* ATR */}
+            {/* ==================================== */}
+
+            <ATRCard
+              atr={data.atr}
+            />
+
+            {/* ==================================== */}
+            {/* VWAP */}
+            {/* ==================================== */}
+
             <VWAPCard
-  vwap={data.vwap}
-/>
+              vwap={data.vwap}
+            />
 
-            
+            {/* ==================================== */}
+            {/* ADX */}
+            {/* ==================================== */}
 
-            <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
-  <h3 className="text-slate-400 text-lg">
-    PCR
-  </h3>
+            <ADXCard
+              adx={data.adx}
+            />
 
-  <div className="text-4xl font-bold mt-3 text-white">
-    {data.pcrDetails?.value ?? data.pcr ?? "-"}
-  </div>
-
-  <div className="mt-5 space-y-3">
-
-    <div className="flex justify-between items-center">
-      <span className="text-slate-400">
-        CE OI
-      </span>
-
-      <span className="text-white font-semibold">
-        {Number(
-          data.pcrDetails?.ceOI ?? 0
-        ).toLocaleString("en-IN")}
-      </span>
-    </div>
-
-    <div className="flex justify-between items-center">
-      <span className="text-slate-400">
-        PE OI
-      </span>
-
-      <span className="text-white font-semibold">
-        {Number(
-          data.pcrDetails?.peOI ?? 0
-        ).toLocaleString("en-IN")}
-      </span>
-    </div>
-
-    <div className="flex justify-between items-center">
-      <span className="text-slate-400">
-        Expiry
-      </span>
-
-      <span className="text-white font-semibold">
-        {data.pcrDetails?.expiry
-  ? new Date(
-      data.pcrDetails.expiry
-    ).toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    })
-  : "-"}
-      </span>
-    </div>
-
-  </div>
-</div>
+            {/* ==================================== */}
+            {/* MARKET STRENGTH */}
+            {/* ==================================== */}
 
             <DashboardCard
               title="Market Strength"
@@ -187,46 +338,64 @@ export default function DashboardClient() {
 
           </div>
 
-          {/* ============================= */}
+          {/* ====================================== */}
           {/* AI / OI / MARKET BIAS */}
-          {/* ============================= */}
+          {/* ====================================== */}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mt-6">
 
-            <AITradePanel ai={data.ai} />
+            <AITradePanel
+              ai={data.ai}
+            />
 
-            <OILeaders data={data} />
+            <OILeaders
+              data={data}
+            />
 
-            <MarketBiasCard bias={data.marketBias} />
+            <MarketBiasCard
+              bias={data.marketBias}
+            />
 
           </div>
 
-          {/* ============================= */}
+          {/* ====================================== */}
           {/* NIFTY INTELLIGENCE */}
-          {/* ============================= */}
+          {/* ====================================== */}
 
           <div className="mt-6 w-full min-w-0">
+
             <NiftyIntelligence
-              intelligence={data.niftyIntelligence}
+              intelligence={
+                data.niftyIntelligence
+              }
             />
+
           </div>
 
-          {/* ============================= */}
+          {/* ====================================== */}
           {/* LIVE OPTION CHAIN */}
-          {/* ============================= */}
+          {/* ====================================== */}
 
           <div className="mt-6 w-full min-w-0">
+
             <LiveOptionChain
-              optionChain={data.optionChain}
+              optionChain={
+                data.optionChain
+              }
             />
+
           </div>
 
-          {/* ============================= */}
+          {/* ====================================== */}
           {/* OI ANALYSIS */}
-          {/* ============================= */}
+          {/* ====================================== */}
 
           <div className="mt-6 w-full min-w-0">
-            <OIAnalysis data={data} />
+
+            <OIAnalysis
+              data={data}
+            />
+
           </div>
 
         </div>

@@ -4,14 +4,22 @@ export default function DashboardCard({
   change = null,
   percent = null,
   color = "text-white",
-}) {
 
+  // Optional second section
+  secondaryTitle = null,
+  secondaryValue = null,
+  secondaryColor = "text-white",
+}) {
   const isPositive =
     change !== null &&
     Number(change) >= 0;
 
   return (
     <div className="bg-slate-800 rounded-xl p-6 shadow-lg border border-slate-700 hover:border-green-500 transition-all duration-300">
+
+      {/* ============================= */}
+      {/* PRIMARY SECTION */}
+      {/* ============================= */}
 
       <h2 className="text-gray-400 text-sm uppercase tracking-wide">
         {title}
@@ -38,6 +46,24 @@ export default function DashboardCard({
           {percent !== null && (
             <span>({percent}%)</span>
           )}
+        </div>
+      )}
+
+      {/* ============================= */}
+      {/* SECONDARY SECTION */}
+      {/* ============================= */}
+
+      {secondaryTitle !== null && (
+        <div className="mt-6 pt-5 border-t border-slate-700">
+
+          <h2 className="text-gray-400 text-sm uppercase tracking-wide">
+            {secondaryTitle}
+          </h2>
+
+          <p className={`text-2xl font-bold mt-3 ${secondaryColor}`}>
+            {secondaryValue}
+          </p>
+
         </div>
       )}
 
