@@ -8,6 +8,7 @@ import {
 import { calculateCrudeTechnicalIndicators } from "@/services/crude/technicalEngine";
 import { calculateCrudeLevels } from "@/services/crude/levelEngine";
 import { calculateCrudeIntelligence } from "@/services/crude/intelligenceEngine";
+import { getCrudePCR } from "@/services/crude/options";
 
 export async function GET() {
   try {
@@ -19,6 +20,12 @@ export async function GET() {
       getCrudeHistoricalData("5minute", 5),
       getLiveCrudeQuote(),
     ]);
+
+    // ================================================
+    // CRUDE PCR
+    // ================================================
+
+    const pcrData = await getCrudePCR();
 
     // ================================================
     // TECHNICAL INDICATORS
@@ -58,7 +65,12 @@ export async function GET() {
       success: true,
 
       data: {
-        tradingsymbol: live.tradingsymbol,
+        tradingsymbol:
+          live.tradingsymbol,
+
+        // ============================================
+        // PRICE
+        // ============================================
 
         price: {
           ltp: live.ltp,
@@ -70,24 +82,68 @@ export async function GET() {
           oi: live.oi,
         },
 
+        // ============================================
+        // PCR
+        // ============================================
+
+        pcr: {
+          value: pcrData.pcr,
+
+          ceOI:
+            pcrData.ceOI,
+
+          peOI:
+            pcrData.peOI,
+
+          expiry:
+            pcrData.expiry,
+
+          ceCount:
+            pcrData.ceCount,
+
+          peCount:
+            pcrData.peCount,
+        },
+
+        // ============================================
+        // TECHNICAL INDICATORS
+        // ============================================
+
         technical: {
-          ema9: indicators.ema9,
-          ema20: indicators.ema20,
-          ema50: indicators.ema50,
-          ema200: indicators.ema200,
+          ema9:
+            indicators.ema9,
 
-          vwap: indicators.vwap,
+          ema20:
+            indicators.ema20,
 
-          rsi14: indicators.rsi14,
+          ema50:
+            indicators.ema50,
+
+          ema200:
+            indicators.ema200,
+
+          vwap:
+            indicators.vwap,
+
+          rsi14:
+            indicators.rsi14,
 
           macd: {
-            macd: indicators.macd.macd,
-            signal: indicators.macd.signal,
-            histogram: indicators.macd.histogram,
+            macd:
+              indicators.macd.macd,
+
+            signal:
+              indicators.macd.signal,
+
+            histogram:
+              indicators.macd.histogram,
           },
 
-          adx14: indicators.adx14,
-          atr14: indicators.atr14,
+          adx14:
+            indicators.adx14,
+
+          atr14:
+            indicators.atr14,
         },
 
         // ============================================
@@ -95,93 +151,122 @@ export async function GET() {
         // ============================================
 
         levels: {
-  support: levels.support,
-  resistance: levels.resistance,
-  breakoutReference: levels.breakoutReference,
-  breakdownReference: levels.breakdownReference,
+          support:
+            levels.support,
 
-  windowHigh: levels.windowHigh,
-  windowLow: levels.windowLow,
+          resistance:
+            levels.resistance,
 
-  previousHigh: levels.previousHigh,
-  previousLow: levels.previousLow,
+          breakoutReference:
+            levels.breakoutReference,
 
-  supportDistance: levels.supportDistance,
-  resistanceDistance: levels.resistanceDistance,
+          breakdownReference:
+            levels.breakdownReference,
 
-  supportDistancePercent:
-    levels.supportDistancePercent,
+          windowHigh:
+            levels.windowHigh,
 
-  resistanceDistancePercent:
-    levels.resistanceDistancePercent,
+          windowLow:
+            levels.windowLow,
 
-  nearSupport: levels.nearSupport,
-  nearResistance: levels.nearResistance,
+          previousHigh:
+            levels.previousHigh,
 
-  supportTouches: levels.supportTouches,
-  resistanceTouches: levels.resistanceTouches,
+          previousLow:
+            levels.previousLow,
 
-  supportRejections:
-    levels.supportRejections,
+          supportDistance:
+            levels.supportDistance,
 
-  resistanceRejections:
-    levels.resistanceRejections,
+          resistanceDistance:
+            levels.resistanceDistance,
 
-  supportStrength:
-    levels.supportStrength,
+          supportDistancePercent:
+            levels.supportDistancePercent,
 
-  resistanceStrength:
-    levels.resistanceStrength,
+          resistanceDistancePercent:
+            levels.resistanceDistancePercent,
 
-  volumeRatio:
-    levels.volumeRatio,
+          nearSupport:
+            levels.nearSupport,
 
-  volumeConfirmed:
-    levels.volumeConfirmed,
+          nearResistance:
+            levels.nearResistance,
 
-  latestClose:
-    levels.latestClose,
+          supportTouches:
+            levels.supportTouches,
 
-  latestHigh:
-    levels.latestHigh,
+          resistanceTouches:
+            levels.resistanceTouches,
 
-  latestLow:
-    levels.latestLow,
-  nextCandleHold: levels.nextCandleHold,
-nextCandleBreakdownHold: levels.nextCandleBreakdownHold,  
+          supportRejections:
+            levels.supportRejections,
 
-  breakout:
-    levels.breakout,
+          resistanceRejections:
+            levels.resistanceRejections,
 
-  breakdown:
-    levels.breakdown,
+          supportStrength:
+            levels.supportStrength,
 
-  breakoutWatch:
-    levels.breakoutWatch,
+          resistanceStrength:
+            levels.resistanceStrength,
 
-  breakdownWatch:
-    levels.breakdownWatch,
+          volumeRatio:
+            levels.volumeRatio,
 
-  rangePosition:
-    levels.rangePosition,
+          volumeConfirmed:
+            levels.volumeConfirmed,
 
-  levelBias:
-    levels.levelBias,
+          latestClose:
+            levels.latestClose,
 
-  swingHighCount:
-    levels.swingHighCount,
+          latestHigh:
+            levels.latestHigh,
 
-  swingLowCount:
-    levels.swingLowCount,
-},
+          latestLow:
+            levels.latestLow,
+
+          nextCandleHold:
+            levels.nextCandleHold,
+
+          nextCandleBreakdownHold:
+            levels.nextCandleBreakdownHold,
+
+          breakout:
+            levels.breakout,
+
+          breakdown:
+            levels.breakdown,
+
+          breakoutWatch:
+            levels.breakoutWatch,
+
+          breakdownWatch:
+            levels.breakdownWatch,
+
+          rangePosition:
+            levels.rangePosition,
+
+          levelBias:
+            levels.levelBias,
+
+          swingHighCount:
+            levels.swingHighCount,
+
+          swingLowCount:
+            levels.swingLowCount,
+        },
 
         // ============================================
         // CRUDE INTELLIGENCE
         // ============================================
 
         intelligence: {
-          score: intelligence.score,
-          bias: intelligence.bias,
+          score:
+            intelligence.score,
+
+          bias:
+            intelligence.bias,
 
           trendStrength:
             intelligence.trendStrength,
@@ -200,6 +285,7 @@ nextCandleBreakdownHold: levels.nextCandleBreakdownHold,
         },
       },
     });
+
   } catch (error) {
     console.error(
       "CRUDE INTELLIGENCE API ERROR:",
@@ -209,7 +295,10 @@ nextCandleBreakdownHold: levels.nextCandleBreakdownHold,
     return NextResponse.json(
       {
         success: false,
-        message: error.message,
+
+        message:
+          error?.message ||
+          "Unknown error",
       },
       {
         status: 500,

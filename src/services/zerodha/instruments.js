@@ -274,6 +274,66 @@ export async function getCrudeOilFutures() {
 
   return crude;
 }
+// =====================================================
+// GET CRUDE OIL OPTIONS
+// =====================================================
+export async function getCrudeOilOptions() {
+  const instruments =
+    await getAllMCXInstruments();
+
+  const crudeOptions =
+    instruments.filter(
+      (item) =>
+        item.name === "CRUDEOIL" &&
+        item.segment === "MCX-OPT" &&
+        (item.instrument_type === "CE" ||
+          item.instrument_type === "PE")
+    );
+
+  console.log(
+    "======================================"
+  );
+
+  console.log(
+    "CRUDE OPTIONS COUNT:",
+    crudeOptions.length
+  );
+
+  console.log(
+    "CRUDE OPTIONS SAMPLE:"
+  );
+
+  console.log(
+    crudeOptions.slice(0, 10).map((item) => ({
+      tradingsymbol:
+        item.tradingsymbol,
+
+      expiry:
+        item.expiry,
+
+      strike:
+        item.strike,
+
+      instrument_token:
+        item.instrument_token,
+
+      instrument_type:
+        item.instrument_type,
+
+      lot_size:
+        item.lot_size,
+
+      segment:
+        item.segment,
+    }))
+  );
+
+  console.log(
+    "======================================"
+  );
+
+  return crudeOptions;
+}
 
 // =====================================================
 // GET CURRENT CRUDE OIL FUTURE

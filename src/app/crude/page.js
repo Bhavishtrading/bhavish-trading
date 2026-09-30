@@ -174,6 +174,90 @@ export default function CrudePage() {
 
       </div>
 
+     {/* ================================================= */}
+{/* PCR */}
+{/* ================================================= */}
+
+<div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
+
+  <h3 className="text-slate-400 text-lg">
+    PCR
+  </h3>
+
+  <div className="flex items-center gap-4 mt-3">
+
+    <div className="text-4xl font-bold text-white">
+      {data?.pcr?.value ?? "--"}
+    </div>
+
+    {data?.pcr?.value != null && (
+      <div
+        className={`px-3 py-1 rounded-lg text-sm font-semibold ${
+          data.pcr.value > 1
+            ? "bg-green-950 text-green-400"
+            : data.pcr.value < 0.7
+            ? "bg-red-950 text-red-400"
+            : "bg-yellow-950 text-yellow-400"
+        }`}
+      >
+        {data.pcr.value > 1
+          ? "BULLISH CONTEXT"
+          : data.pcr.value < 0.7
+          ? "BEARISH CONTEXT"
+          : "BALANCED"}
+      </div>
+    )}
+
+  </div>
+
+  <div className="mt-5 space-y-3">
+
+    {/* CE OI */}
+    <div className="flex justify-between items-center">
+      <span className="text-slate-400">
+        CE OI
+      </span>
+
+      <span className="text-white font-semibold">
+        {Number(data?.pcr?.ceOI ?? 0).toLocaleString("en-IN")}
+      </span>
+    </div>
+
+    {/* PE OI */}
+    <div className="flex justify-between items-center">
+      <span className="text-slate-400">
+        PE OI
+      </span>
+
+      <span className="text-white font-semibold">
+        {Number(data?.pcr?.peOI ?? 0).toLocaleString("en-IN")}
+      </span>
+    </div>
+
+    {/* Expiry */}
+    <div className="flex justify-between items-center">
+      <span className="text-slate-400">
+        Expiry
+      </span>
+
+      <span className="text-white font-semibold">
+        {data?.pcr?.expiry
+          ? new Date(data.pcr.expiry).toLocaleDateString(
+              "en-IN",
+              {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              }
+            )
+          : "--"}
+      </span>
+    </div>
+
+  </div>
+
+</div>
+
       {/* ================================================= */}
       {/* TECHNICAL INDICATORS */}
       {/* ================================================= */}
