@@ -21,6 +21,7 @@ import BhavishScoreCard from "./BhavishScoreCard";
 
 export default function DashboardClient() {
   const [data, setData] = useState(null);
+  const [sectorData, setSectorData] = useState(null);
 
   // ============================================
   // FETCH MARKET DATA
@@ -49,14 +50,40 @@ export default function DashboardClient() {
   }
 
   // ============================================
+  // FETCH SECTOR INTELLIGENCE
+  // ============================================
+
+  async function fetchSectorData() {
+    try {
+      const response = await fetch("/api/nifty50-sector", {
+        cache: "no-store",
+      });
+
+      if (!response.ok) {
+        throw new Error(`Sector API HTTP ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      console.log("Sector API Result:", result);
+
+      setSectorData(result);
+    } catch (error) {
+      console.error("Sector Intelligence Error:", error);
+    }
+  }
+
+  // ============================================
   // AUTO REFRESH
   // ============================================
 
   useEffect(() => {
     fetchMarketData();
+    fetchSectorData();
 
     const interval = setInterval(() => {
       fetchMarketData();
+      fetchSectorData();
     }, 10000);
 
     return () => clearInterval(interval);
@@ -78,13 +105,9 @@ export default function DashboardClient() {
   // PCR / OI CALCULATIONS
   // ============================================
 
-  const ceOI = Number(
-    data.pcrDetails?.ceOI ?? 0
-  );
+  const ceOI = Number(data.pcrDetails?.ceOI ?? 0);
 
-  const peOI = Number(
-    data.pcrDetails?.peOI ?? 0
-  );
+  const peOI = Number(data.pcrDetails?.peOI ?? 0);
 
   // PE OI - CE OI
   const oiDifference = peOI - ceOI;
@@ -95,6 +118,49 @@ export default function DashboardClient() {
       : oiDifference < 0
       ? "text-red-400"
       : "text-yellow-400";
+
+  // ============================================
+  // SECTOR INTELLIGENCE SUMMARY
+  // ============================================
+
+  const sectorScore = Number(
+    sectorData?.overallSectorScore ?? 0
+  );
+
+  const totalContribution = Number(
+    sectorData?.totalContribution ?? 0
+  );
+
+  const weightTotal = Number(
+    sectorData?.weightTotal ?? 0
+  );
+
+  const sectorPerformance =
+    weightTotal > 0
+      ? (totalContribution / weightTotal) * 100
+      : 0;
+
+  const sectors = Array.isArray(sectorData?.sectors)
+    ? sectorData.sectors
+    : [];
+
+  const strongestSector =
+    sectors.length > 0
+      ? [...sectors].sort(
+          (a, b) =>
+            Number(b.performance ?? 0) -
+            Number(a.performance ?? 0)
+        )[0]
+      : null;
+
+  const weakestSector =
+    sectors.length > 0
+      ? [...sectors].sort(
+          (a, b) =>
+            Number(a.performance ?? 0) -
+            Number(b.performance ?? 0)
+        )[0]
+      : null;
 
   return (
     <main className="min-h-screen w-full max-w-full overflow-x-hidden bg-slate-950 text-white">
@@ -176,6 +242,135 @@ export default function DashboardClient() {
             <AISignalCard
               ai={data.ai}
             />
+
+            {/* ==================================== */}
+            {/* SECTOR INTELLIGENCE */}
+            {/* ==================================== */}
+
+            <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-lg hover:border-cyan-500 transition-all duration-300">
+
+              <h3 className="text-slate-300 text-sm uppercase tracking-wide font-semibold">
+                📊 NIFTY 50 SECTOR
+              </h3>
+
+              {/* SCORE */}
+
+              <div
+                className={`text-4xl font-bold mt-4 ${
+                  sectorScore > 0
+                    ? "text-green-400"
+                    : sectorScore < 0
+                    ? "text-red-400"
+                    : "text-yellow-400"
+                }`}
+              >
+                {sectorData
+                  ? sectorScore.toFixed(2)
+                  : "-"}
+              </div>
+
+              <div className="text-slate-400 text-xs mt-1">
+                Sector Score
+              </div>
+
+              {/* DETAILS */}
+
+              <div className="mt-5 space-y-3">
+
+                {/* CONTRIBUTION */}
+
+                <div className="flex justify-between items-center gap-4">
+
+                  <span className="text-slate-400 text-sm">
+                    Contribution
+                  </span>
+
+                  <span
+                    className={`font-bold text-sm ${
+                      sectorPerformance > 0
+                        ? "text-green-400"
+                        : sectorPerformance < 0
+                        ? "text-red-400"
+                        : "text-yellow-400"
+                    }`}
+                  >
+                    {sectorData
+                      ? `${sectorPerformance.toFixed(2)}%`
+                      : "-"}
+                  </span>
+
+                </div>
+                {/* WEIGHT COVERED */}
+
+<div className="flex justify-between items-center gap-4">
+
+  <span className="text-slate-400 text-sm">
+    Weight Covered
+  </span>
+
+  <span className="text-cyan-400 font-bold text-sm">
+    {sectorData
+      ? `${weightTotal.toFixed(2)}%`
+      : "-"}
+  </span>
+
+</div>
+
+                {/* STRONGEST */}
+
+                <div className="flex justify-between items-center gap-4">
+
+                  <span className="text-slate-400 text-sm">
+                    Strongest
+                  </span>
+
+                  <span className="text-green-400 font-semibold text-sm text-right">
+  {strongestSector
+    ? `${strongestSector.sector} ${
+        Number(
+          strongestSector.performance ?? 0
+        ).toFixed(2)
+      }%`
+    : "-"}
+</span>
+
+                </div>
+
+                {/* WEAKEST */}
+
+                <div className="flex justify-between items-center gap-4">
+
+                  <span className="text-slate-400 text-sm">
+                    Weakest
+                  </span>
+
+                  <span className="text-red-400 font-semibold text-sm text-right">
+  {weakestSector
+    ? `${weakestSector.sector} ${
+        Number(
+          weakestSector.performance ?? 0
+        ).toFixed(2)
+      }%`
+    : "-"}
+</span>
+
+                </div>
+
+                {/* LINK */}
+
+                <div className="pt-3 border-t border-slate-700">
+
+                  <a
+                    href="/sector-intelligence"
+                    className="text-cyan-400 hover:text-cyan-300 text-sm font-semibold"
+                  >
+                    View Sector Intelligence →
+                  </a>
+
+                </div>
+
+              </div>
+            </div>
 
             {/* ==================================== */}
             {/* RSI */}
@@ -279,6 +474,7 @@ export default function DashboardClient() {
                   </span>
 
                   <span className="text-cyan-400 font-semibold text-sm">
+
                     {data.pcrDetails?.expiry
                       ? new Date(
                           data.pcrDetails.expiry
@@ -291,6 +487,7 @@ export default function DashboardClient() {
                           }
                         )
                       : "-"}
+
                   </span>
 
                 </div>

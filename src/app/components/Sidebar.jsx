@@ -34,11 +34,18 @@ export default function Sidebar() {
         </Link>
 
         <Link
-  href="/silver"
-  className="block hover:bg-slate-800 p-3 rounded-lg cursor-pointer"
->
-  🥈 Silver
-</Link>
+          href="/silver"
+          className="block hover:bg-slate-800 p-3 rounded-lg cursor-pointer"
+        >
+          🥈 Silver
+        </Link>
+
+        <Link
+          href="/sector-intelligence"
+          className="block hover:bg-slate-800 p-3 rounded-lg cursor-pointer"
+        >
+          📊 Sector Intelligence
+        </Link>
 
         <div className="hover:bg-slate-800 p-3 rounded-lg cursor-pointer">
           📉 OI Analysis
