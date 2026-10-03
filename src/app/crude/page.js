@@ -40,8 +40,42 @@ export default function CrudePage() {
   const price = data?.price;
   const technical = data?.technical;
   const intelligence = data?.intelligence;
+  const bhavishScore = data?.bhavishScore;
 
   const positive = price?.ltp >= price?.close;
+
+  // =================================================
+  // PCR CONTEXT
+  // =================================================
+
+  const pcrValue = Number(data?.pcr?.value);
+
+  const pcrContext =
+    !Number.isFinite(pcrValue)
+      ? "NO DATA"
+      : pcrValue > 1
+      ? "BULLISH CONTEXT"
+      : pcrValue < 0.7
+      ? "BEARISH CONTEXT"
+      : "BALANCED";
+
+  const pcrContextClass =
+    pcrContext === "BULLISH CONTEXT"
+      ? "text-green-400"
+      : pcrContext === "BEARISH CONTEXT"
+      ? "text-red-400"
+      : pcrContext === "BALANCED"
+      ? "text-yellow-400"
+      : "text-slate-400";
+
+  const pcrContextBg =
+    pcrContext === "BULLISH CONTEXT"
+      ? "bg-green-950 border-green-800"
+      : pcrContext === "BEARISH CONTEXT"
+      ? "bg-red-950 border-red-800"
+      : pcrContext === "BALANCED"
+      ? "bg-yellow-950 border-yellow-800"
+      : "bg-slate-900 border-slate-700";
 
   if (loading && !data) {
     return (
@@ -142,6 +176,7 @@ export default function CrudePage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
 
+        {/* PREVIOUS CLOSE */}
         <div className="bg-slate-900 border border-slate-700 rounded-xl p-5">
           <p className="text-slate-400">
             Previous Close
@@ -152,6 +187,7 @@ export default function CrudePage() {
           </h2>
         </div>
 
+        {/* VOLUME */}
         <div className="bg-slate-900 border border-slate-700 rounded-xl p-5">
           <p className="text-slate-400">
             Volume
@@ -162,6 +198,7 @@ export default function CrudePage() {
           </h2>
         </div>
 
+        {/* OPEN INTEREST */}
         <div className="bg-slate-900 border border-slate-700 rounded-xl p-5">
           <p className="text-slate-400">
             Open Interest
@@ -174,89 +211,127 @@ export default function CrudePage() {
 
       </div>
 
-     {/* ================================================= */}
-{/* PCR */}
-{/* ================================================= */}
+      {/* ================================================= */}
+      {/* PCR INTELLIGENCE */}
+      {/* ================================================= */}
 
-<div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
+      <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
 
-  <h3 className="text-slate-400 text-lg">
-    PCR
-  </h3>
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
 
-  <div className="flex items-center gap-4 mt-3">
+          <div>
+            <h2 className="text-xl font-bold text-white">
+              📊 PCR Intelligence
+            </h2>
 
-    <div className="text-4xl font-bold text-white">
-      {data?.pcr?.value ?? "--"}
-    </div>
+            <p className="text-slate-500 text-sm mt-1">
+              Crude Oil Options Positioning
+            </p>
+          </div>
 
-    {data?.pcr?.value != null && (
-      <div
-        className={`px-3 py-1 rounded-lg text-sm font-semibold ${
-          data.pcr.value > 1
-            ? "bg-green-950 text-green-400"
-            : data.pcr.value < 0.7
-            ? "bg-red-950 text-red-400"
-            : "bg-yellow-950 text-yellow-400"
-        }`}
-      >
-        {data.pcr.value > 1
-          ? "BULLISH CONTEXT"
-          : data.pcr.value < 0.7
-          ? "BEARISH CONTEXT"
-          : "BALANCED"}
+          {/* PCR VALUE */}
+          <div className="text-left md:text-right">
+
+            <p className="text-slate-400 text-sm">
+              PCR
+            </p>
+
+            <p className="text-4xl font-bold text-white mt-1">
+              {data?.pcr?.value != null
+                ? Number(data.pcr.value).toFixed(2)
+                : "--"}
+            </p>
+
+          </div>
+
+        </div>
+
+        {/* PCR CONTEXT */}
+        <div className="mt-5">
+
+          <div
+            className={`border rounded-xl p-4 ${pcrContextBg}`}
+          >
+
+            <p className="text-slate-400 text-sm">
+              PCR Context
+            </p>
+
+            <p className={`text-2xl font-bold mt-1 ${pcrContextClass}`}>
+              {pcrContext}
+            </p>
+
+            <p className="text-slate-500 text-sm mt-2">
+              {pcrContext === "BULLISH CONTEXT"
+                ? "Put OI is relatively higher than Call OI."
+                : pcrContext === "BEARISH CONTEXT"
+                ? "Call OI is relatively higher than Put OI."
+                : pcrContext === "BALANCED"
+                ? "Put and Call OI relationship is relatively balanced."
+                : "PCR data is currently unavailable."}
+            </p>
+
+          </div>
+
+        </div>
+
+        {/* PCR DETAILS */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5">
+
+          {/* CE OI */}
+          <div className="bg-slate-900 rounded-xl p-4">
+
+            <p className="text-slate-500 text-sm">
+              CE OI
+            </p>
+
+            <p className="text-xl font-bold text-white mt-2">
+              {Number(
+                data?.pcr?.ceOI ?? 0
+              ).toLocaleString("en-IN")}
+            </p>
+
+          </div>
+
+          {/* PE OI */}
+          <div className="bg-slate-900 rounded-xl p-4">
+
+            <p className="text-slate-500 text-sm">
+              PE OI
+            </p>
+
+            <p className="text-xl font-bold text-white mt-2">
+              {Number(
+                data?.pcr?.peOI ?? 0
+              ).toLocaleString("en-IN")}
+            </p>
+
+          </div>
+
+          {/* EXPIRY */}
+          <div className="bg-slate-900 rounded-xl p-4">
+
+            <p className="text-slate-500 text-sm">
+              Active Expiry
+            </p>
+
+            <p className="text-xl font-bold text-white mt-2">
+              {data?.pcr?.expiry
+                ? new Date(
+                    data.pcr.expiry
+                  ).toLocaleDateString("en-IN", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                  })
+                : "--"}
+            </p>
+
+          </div>
+
+        </div>
+
       </div>
-    )}
-
-  </div>
-
-  <div className="mt-5 space-y-3">
-
-    {/* CE OI */}
-    <div className="flex justify-between items-center">
-      <span className="text-slate-400">
-        CE OI
-      </span>
-
-      <span className="text-white font-semibold">
-        {Number(data?.pcr?.ceOI ?? 0).toLocaleString("en-IN")}
-      </span>
-    </div>
-
-    {/* PE OI */}
-    <div className="flex justify-between items-center">
-      <span className="text-slate-400">
-        PE OI
-      </span>
-
-      <span className="text-white font-semibold">
-        {Number(data?.pcr?.peOI ?? 0).toLocaleString("en-IN")}
-      </span>
-    </div>
-
-    {/* Expiry */}
-    <div className="flex justify-between items-center">
-      <span className="text-slate-400">
-        Expiry
-      </span>
-
-      <span className="text-white font-semibold">
-        {data?.pcr?.expiry
-          ? new Date(data.pcr.expiry).toLocaleDateString(
-              "en-IN",
-              {
-                day: "2-digit",
-                month: "short",
-                year: "numeric",
-              }
-            )
-          : "--"}
-      </span>
-    </div>
-
-  </div>
-
-</div>
 
       {/* ================================================= */}
       {/* TECHNICAL INDICATORS */}
@@ -300,10 +375,51 @@ export default function CrudePage() {
             value={technical?.rsi14}
           />
 
-          <Indicator
-            title="ADX 14"
-            value={technical?.adx14}
-          />
+          {/* ADX 14 */}
+
+<div className="bg-slate-900 border border-slate-700 rounded-xl p-4">
+
+  <p className="text-slate-400 text-sm">
+    ADX 14
+  </p>
+
+  <p className="text-3xl font-bold text-white mt-2">
+    {technical?.adx14 != null
+      ? Number(technical.adx14).toFixed(2)
+      : "--"}
+  </p>
+
+  <div className="mt-3 text-sm text-slate-400">
+    +DI:{" "}
+    {technical?.adxPlusDI != null
+      ? Number(technical.adxPlusDI).toFixed(2)
+      : "--"}
+  </div>
+
+  <div className="mt-2 text-sm text-slate-400">
+    -DI:{" "}
+    {technical?.adxMinusDI != null
+      ? Number(technical.adxMinusDI).toFixed(2)
+      : "--"}
+  </div>
+
+  <div
+    className={`mt-3 font-bold ${
+      technical?.adxDirection === "Bullish"
+        ? "text-green-400"
+        : technical?.adxDirection === "Bearish"
+        ? "text-red-400"
+        : "text-yellow-400"
+    }`}
+  >
+    {technical?.adxDirection ?? "Neutral"}
+  </div>
+
+  <div className="mt-2 text-sm text-slate-400">
+    {technical?.adxTrend ?? "Unknown"}
+  </div>
+
+</div>
 
           <Indicator
             title="ATR 14"
@@ -315,11 +431,8 @@ export default function CrudePage() {
       </div>
 
       {/* ================================================= */}
-      {/* MACD */}
+      {/* SUPPORT / RESISTANCE INTELLIGENCE */}
       {/* ================================================= */}
-            {/* =====================================================
-          SUPPORT / RESISTANCE INTELLIGENCE
-      ====================================================== */}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
@@ -327,6 +440,7 @@ export default function CrudePage() {
         <div className="bg-slate-900 border border-green-800 rounded-xl p-6">
 
           <div className="flex items-center justify-between">
+
             <div>
               <p className="text-slate-400">
                 🟢 Strong Support
@@ -338,6 +452,7 @@ export default function CrudePage() {
             </div>
 
             <div className="text-right">
+
               <p className="text-slate-400 text-sm">
                 Strength
               </p>
@@ -345,12 +460,15 @@ export default function CrudePage() {
               <p className="text-2xl font-bold text-white">
                 {data?.levels?.supportStrength ?? "--"}%
               </p>
+
             </div>
+
           </div>
 
           <div className="grid grid-cols-2 gap-4 mt-6">
 
             <div className="bg-slate-800 rounded-lg p-3">
+
               <p className="text-slate-500 text-sm">
                 Distance
               </p>
@@ -358,9 +476,11 @@ export default function CrudePage() {
               <p className="text-white font-bold mt-1">
                 ₹ {data?.levels?.supportDistance ?? "--"}
               </p>
+
             </div>
 
             <div className="bg-slate-800 rounded-lg p-3">
+
               <p className="text-slate-500 text-sm">
                 Touches
               </p>
@@ -368,17 +488,18 @@ export default function CrudePage() {
               <p className="text-white font-bold mt-1">
                 {data?.levels?.supportTouches ?? "--"}
               </p>
+
             </div>
 
           </div>
 
         </div>
 
-
         {/* RESISTANCE */}
         <div className="bg-slate-900 border border-red-800 rounded-xl p-6">
 
           <div className="flex items-center justify-between">
+
             <div>
               <p className="text-slate-400">
                 🔴 Strong Resistance
@@ -390,6 +511,7 @@ export default function CrudePage() {
             </div>
 
             <div className="text-right">
+
               <p className="text-slate-400 text-sm">
                 Strength
               </p>
@@ -397,12 +519,15 @@ export default function CrudePage() {
               <p className="text-2xl font-bold text-white">
                 {data?.levels?.resistanceStrength ?? "--"}%
               </p>
+
             </div>
+
           </div>
 
           <div className="grid grid-cols-2 gap-4 mt-6">
 
             <div className="bg-slate-800 rounded-lg p-3">
+
               <p className="text-slate-500 text-sm">
                 Distance
               </p>
@@ -410,9 +535,11 @@ export default function CrudePage() {
               <p className="text-white font-bold mt-1">
                 ₹ {data?.levels?.resistanceDistance ?? "--"}
               </p>
+
             </div>
 
             <div className="bg-slate-800 rounded-lg p-3">
+
               <p className="text-slate-500 text-sm">
                 Touches
               </p>
@@ -420,6 +547,7 @@ export default function CrudePage() {
               <p className="text-white font-bold mt-1">
                 {data?.levels?.resistanceTouches ?? "--"}
               </p>
+
             </div>
 
           </div>
@@ -427,7 +555,6 @@ export default function CrudePage() {
         </div>
 
       </div>
-
 
       {/* =====================================================
           BREAKOUT / BREAKDOWN INTELLIGENCE
@@ -438,6 +565,7 @@ export default function CrudePage() {
         <div className="flex items-center justify-between mb-6">
 
           <div>
+
             <h2 className="text-xl font-bold text-white">
               🚨 Breakout / Breakdown Intelligence
             </h2>
@@ -445,6 +573,7 @@ export default function CrudePage() {
             <p className="text-slate-400 text-sm mt-1">
               Price + Candle Close + Volume confirmation
             </p>
+
           </div>
 
           <div className="text-right">
@@ -453,11 +582,13 @@ export default function CrudePage() {
               Volume Ratio
             </p>
 
-            <p className={`text-xl font-bold ${
-              data?.levels?.volumeConfirmed
-                ? "text-green-400"
-                : "text-yellow-400"
-            }`}>
+            <p
+              className={`text-xl font-bold ${
+                data?.levels?.volumeConfirmed
+                  ? "text-green-400"
+                  : "text-yellow-400"
+              }`}
+            >
               {data?.levels?.volumeRatio ?? "--"}x
             </p>
 
@@ -465,47 +596,50 @@ export default function CrudePage() {
 
         </div>
 
-
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
 
           {/* BREAKOUT */}
-          <div className={`rounded-xl p-5 border ${
-            data?.levels?.breakout
-              ? "border-green-500 bg-green-950"
-              : data?.levels?.breakoutWatch
-              ? "border-yellow-600 bg-yellow-950"
-              : "border-slate-700 bg-slate-800"
-          }`}>
+          <div
+            className={`rounded-xl p-5 border ${
+              data?.levels?.breakout
+                ? "border-green-500 bg-green-950"
+                : data?.levels?.breakoutWatch
+                ? "border-yellow-600 bg-yellow-950"
+                : "border-slate-700 bg-slate-800"
+            }`}
+          >
 
             <p className="text-slate-400">
               Breakout
             </p>
 
-            <h3 className={`text-2xl font-bold mt-2 ${
-              data?.levels?.breakout
-                ? "text-green-400"
-                : data?.levels?.breakoutWatch
-                ? "text-yellow-400"
-                : "text-slate-400"
-            }`}>
-
+            <h3
+              className={`text-2xl font-bold mt-2 ${
+                data?.levels?.breakout
+                  ? "text-green-400"
+                  : data?.levels?.breakoutWatch
+                  ? "text-yellow-400"
+                  : "text-slate-400"
+              }`}
+            >
               {data?.levels?.breakout
                 ? "CONFIRMED"
                 : data?.levels?.breakoutWatch
                 ? "WATCH"
                 : "NO SIGNAL"}
-
             </h3>
 
             <p className="text-slate-400 text-sm mt-3">
-              Resistance: ₹ {data?.levels?.resistance ?? "--"}
+              Resistance: ₹{" "}
+              {data?.levels?.resistance ?? "--"}
             </p>
+
             <p className="text-slate-400 text-sm mt-2">
-  Breakout Reference: ₹ {data?.levels?.breakoutReference ?? "--"}
-</p>
+              Breakout Reference: ₹{" "}
+              {data?.levels?.breakoutReference ?? "--"}
+            </p>
 
           </div>
-
 
           {/* VOLUME */}
           <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
@@ -514,71 +648,75 @@ export default function CrudePage() {
               Volume Confirmation
             </p>
 
-            <h3 className={`text-2xl font-bold mt-2 ${
-              data?.levels?.volumeConfirmed
-                ? "text-green-400"
-                : "text-red-400"
-            }`}>
-
+            <h3
+              className={`text-2xl font-bold mt-2 ${
+                data?.levels?.volumeConfirmed
+                  ? "text-green-400"
+                  : "text-red-400"
+              }`}
+            >
               {data?.levels?.volumeConfirmed
                 ? "CONFIRMED"
                 : "NOT CONFIRMED"}
-
             </h3>
 
             <p className="text-slate-400 text-sm mt-3">
-              Ratio: {data?.levels?.volumeRatio ?? "--"}x
+              Ratio:{" "}
+              {data?.levels?.volumeRatio ?? "--"}x
             </p>
 
           </div>
 
-
           {/* BREAKDOWN */}
-          <div className={`rounded-xl p-5 border ${
-            data?.levels?.breakdown
-              ? "border-red-500 bg-red-950"
-              : data?.levels?.breakdownWatch
-              ? "border-yellow-600 bg-yellow-950"
-              : "border-slate-700 bg-slate-800"
-          }`}>
+          <div
+            className={`rounded-xl p-5 border ${
+              data?.levels?.breakdown
+                ? "border-red-500 bg-red-950"
+                : data?.levels?.breakdownWatch
+                ? "border-yellow-600 bg-yellow-950"
+                : "border-slate-700 bg-slate-800"
+            }`}
+          >
 
             <p className="text-slate-400">
               Breakdown
             </p>
 
-            <h3 className={`text-2xl font-bold mt-2 ${
-              data?.levels?.breakdown
-                ? "text-red-400"
-                : data?.levels?.breakdownWatch
-                ? "text-yellow-400"
-                : "text-slate-400"
-            }`}>
-
+            <h3
+              className={`text-2xl font-bold mt-2 ${
+                data?.levels?.breakdown
+                  ? "text-red-400"
+                  : data?.levels?.breakdownWatch
+                  ? "text-yellow-400"
+                  : "text-slate-400"
+              }`}
+            >
               {data?.levels?.breakdown
                 ? "CONFIRMED"
                 : data?.levels?.breakdownWatch
                 ? "WATCH"
                 : "NO SIGNAL"}
-
             </h3>
 
             <p className="text-slate-400 text-sm mt-3">
-              Support: ₹ {data?.levels?.support ?? "--"}
+              Support: ₹{" "}
+              {data?.levels?.support ?? "--"}
             </p>
+
             <p className="text-slate-400 text-sm mt-2">
-  Breakdown Reference: ₹ {data?.levels?.breakdownReference ?? "--"}
-</p>
+              Breakdown Reference: ₹{" "}
+              {data?.levels?.breakdownReference ?? "--"}
+            </p>
 
           </div>
 
         </div>
 
-
         {/* CANDLE DATA */}
-
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
 
           <div className="bg-slate-800 rounded-lg p-4">
+
             <p className="text-slate-500 text-sm">
               Previous High
             </p>
@@ -586,9 +724,11 @@ export default function CrudePage() {
             <p className="text-white font-bold mt-1">
               ₹ {data?.levels?.previousHigh ?? "--"}
             </p>
+
           </div>
 
           <div className="bg-slate-800 rounded-lg p-4">
+
             <p className="text-slate-500 text-sm">
               Previous Low
             </p>
@@ -596,9 +736,11 @@ export default function CrudePage() {
             <p className="text-white font-bold mt-1">
               ₹ {data?.levels?.previousLow ?? "--"}
             </p>
+
           </div>
 
           <div className="bg-slate-800 rounded-lg p-4">
+
             <p className="text-slate-500 text-sm">
               Latest Close
             </p>
@@ -606,9 +748,11 @@ export default function CrudePage() {
             <p className="text-white font-bold mt-1">
               ₹ {data?.levels?.latestClose ?? "--"}
             </p>
+
           </div>
 
           <div className="bg-slate-800 rounded-lg p-4">
+
             <p className="text-slate-500 text-sm">
               Range Position
             </p>
@@ -616,11 +760,16 @@ export default function CrudePage() {
             <p className="text-yellow-400 font-bold mt-1">
               {data?.levels?.rangePosition ?? "--"}%
             </p>
+
           </div>
 
         </div>
 
       </div>
+
+      {/* ================================================= */}
+      {/* MACD */}
+      {/* ================================================= */}
 
       <div className="bg-slate-900 border border-slate-700 rounded-xl p-6">
 
@@ -631,6 +780,7 @@ export default function CrudePage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-4">
 
           <div>
+
             <p className="text-slate-500 text-sm">
               MACD
             </p>
@@ -638,9 +788,11 @@ export default function CrudePage() {
             <p className="text-xl font-bold text-white">
               {technical?.macd?.macd?.toFixed(2) ?? "--"}
             </p>
+
           </div>
 
           <div>
+
             <p className="text-slate-500 text-sm">
               Signal
             </p>
@@ -648,9 +800,11 @@ export default function CrudePage() {
             <p className="text-xl font-bold text-white">
               {technical?.macd?.signal?.toFixed(2) ?? "--"}
             </p>
+
           </div>
 
           <div>
+
             <p className="text-slate-500 text-sm">
               Histogram
             </p>
@@ -664,6 +818,7 @@ export default function CrudePage() {
             >
               {technical?.macd?.histogram?.toFixed(2) ?? "--"}
             </p>
+
           </div>
 
         </div>
@@ -671,7 +826,7 @@ export default function CrudePage() {
       </div>
 
       {/* ================================================= */}
-      {/* INTELLIGENCE */}
+      {/* EXISTING CRUDE OIL INTELLIGENCE */}
       {/* ================================================= */}
 
       <div className="bg-slate-900 border border-slate-700 rounded-xl p-6">
@@ -679,16 +834,19 @@ export default function CrudePage() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
 
           <div>
+
             <p className="text-slate-400">
               Crude Oil Intelligence Score
             </p>
 
             <h2 className="text-6xl font-bold text-yellow-400 mt-2">
               {intelligence?.score ?? "--"}
+
               <span className="text-2xl text-slate-500">
                 /100
               </span>
             </h2>
+
           </div>
 
           <div className="text-left md:text-right">
@@ -718,6 +876,7 @@ export default function CrudePage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-8">
 
           <div>
+
             <p className="text-slate-400">
               Confidence
             </p>
@@ -725,9 +884,11 @@ export default function CrudePage() {
             <p className="text-2xl font-bold text-white mt-1">
               {intelligence?.confidence ?? "--"}%
             </p>
+
           </div>
 
           <div>
+
             <p className="text-slate-400">
               Trend Strength
             </p>
@@ -735,9 +896,11 @@ export default function CrudePage() {
             <p className="text-2xl font-bold text-yellow-400 mt-1">
               {intelligence?.trendStrength ?? "--"}
             </p>
+
           </div>
 
           <div>
+
             <p className="text-slate-400">
               Suggested Action
             </p>
@@ -745,11 +908,150 @@ export default function CrudePage() {
             <p className="text-2xl font-bold text-white mt-1">
               {intelligence?.action ?? "--"}
             </p>
+
           </div>
 
         </div>
 
       </div>
+      {/* ================================================= */}
+{/* CRUDE BHAVISH SCORE */}
+{/* ================================================= */}
+
+<div className="bg-slate-900 border border-cyan-800 rounded-xl p-6">
+
+  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+
+    {/* SCORE */}
+
+    <div>
+
+      <p className="text-slate-400">
+        🧠 Crude Bhavish Score
+      </p>
+
+      <h2
+        className={`text-6xl font-bold mt-2 ${
+          Number(bhavishScore?.score) > 0
+            ? "text-green-400"
+            : Number(bhavishScore?.score) < 0
+            ? "text-red-400"
+            : "text-yellow-400"
+        }`}
+      >
+        {Number(bhavishScore?.score) > 0 ? "+" : ""}
+        {bhavishScore?.score ?? "--"}
+
+        <span className="text-2xl text-slate-500">
+          {" "}/100
+        </span>
+      </h2>
+
+      <p
+        className={`text-2xl font-bold mt-2 ${
+          bhavishScore?.score >= 25
+            ? "text-green-400"
+            : bhavishScore?.score <= -25
+            ? "text-red-400"
+            : "text-yellow-400"
+        }`}
+      >
+        {bhavishScore?.state ?? "NEUTRAL"}
+      </p>
+
+    </div>
+
+
+    {/* CONFIDENCE + ACTION */}
+
+    <div className="text-left md:text-right">
+
+      <p className="text-slate-400">
+        Confidence
+      </p>
+
+      <p className="text-3xl font-bold text-white mt-2">
+        {bhavishScore?.confidence ?? "--"}%
+      </p>
+
+      <p className="text-slate-400 mt-4">
+        Action
+      </p>
+
+      <p className="text-xl font-bold text-cyan-400 mt-1">
+        {bhavishScore?.action ?? "--"}
+      </p>
+
+    </div>
+
+  </div>
+
+
+  {/* SCORE FACTORS */}
+
+  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mt-8">
+
+    <ScoreFactor
+      label="EMA"
+      value={bhavishScore?.factors?.emaStructure}
+    />
+
+    <ScoreFactor
+      label="MACD"
+      value={bhavishScore?.factors?.macd}
+    />
+
+    <ScoreFactor
+      label="RSI"
+      value={bhavishScore?.factors?.rsi}
+    />
+
+    <ScoreFactor
+      label="ADX"
+      value={bhavishScore?.factors?.adx}
+    />
+
+    <ScoreFactor
+      label="PCR"
+      value={bhavishScore?.factors?.pcr}
+    />
+
+    <ScoreFactor
+      label="Volume"
+      value={bhavishScore?.factors?.volume}
+    />
+
+  </div>
+
+
+  {/* SCORE REASONS */}
+
+  <div className="mt-6">
+
+    <p className="text-slate-400 text-sm uppercase tracking-wide">
+      Score Factors
+    </p>
+
+    <div className="mt-3 space-y-2">
+
+      {bhavishScore?.reasons?.map(
+        (reason, index) => (
+
+          <div
+            key={index}
+            className="bg-slate-800 border border-slate-700 rounded-lg p-3 text-slate-300 text-sm"
+          >
+            ✓ {reason}
+          </div>
+
+        )
+      )}
+
+    </div>
+
+  </div>
+
+</div>
 
       {/* ================================================= */}
       {/* REASONS */}
@@ -802,7 +1104,37 @@ export default function CrudePage() {
 /* ===================================================== */
 /* INDICATOR COMPONENT */
 /* ===================================================== */
+function ScoreFactor({ label, value }) {
 
+  const numeric = Number(value ?? 0);
+
+  const color =
+    numeric > 0
+      ? "text-green-400"
+      : numeric < 0
+      ? "text-red-400"
+      : "text-slate-400";
+
+  return (
+
+    <div className="bg-slate-800 border border-slate-700 rounded-lg p-3">
+
+      <p className="text-slate-500 text-xs">
+        {label}
+      </p>
+
+      <p className={`text-lg font-bold mt-1 ${color}`}>
+
+        {numeric > 0 ? "+" : ""}
+
+        {numeric}
+
+      </p>
+
+    </div>
+
+  );
+}
 function Indicator({ title, value }) {
   return (
     <div className="bg-slate-900 border border-slate-700 rounded-xl p-4">
