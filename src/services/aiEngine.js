@@ -1,13 +1,34 @@
 // =====================================================
 // BHAVISH TRADING
-// FAIR AI TRADE ENGINE
-// AI SCORE = SETUP STRENGTH (0 - 100)
+// AI TRADE ENGINE
+//
+// PURPOSE:
+// Final decision engine for:
+// BUY CE / BUY PE / WAIT
+//
+// IMPORTANT:
+// AI SCORE = SETUP STRENGTH
+// It is NOT directional score.
+//
+// Direction:
+// 15M MACD
+// 5M MACD
+// Spot VWAP
+// ADX +DI / -DI
+// EMA
+// PCR / OI
+//
+// Setup strength:
+// Bhavish Score
+// Trend strength
+// Confirmation quality
+// Volume
 // =====================================================
 
-export function generateAISignal(marketData) {
+export function generateAISignal(marketData = {}) {
 
   // =====================================================
-  // INPUTS
+  // 1. INPUTS
   // =====================================================
 
   const price = Number(marketData.price) || 0;
@@ -20,58 +41,450 @@ export function generateAISignal(marketData) {
     ? Number(marketData.rsi)
     : 50;
 
-  const macd = Number(marketData.macd) || 0;
-  const macdSignal = Number(marketData.macdSignal) || 0;
+  // -----------------------------------------------------
+  // 5M MACD
+  // -----------------------------------------------------
+
+  const macd5m = Number(
+    marketData.macd5m?.macd ??
+    marketData.macd
+  );
+
+  const macdSignal5m = Number(
+    marketData.macd5m?.signal ??
+    marketData.macdSignal
+  );
+
+  const macdHistogram5m = Number(
+    marketData.macd5m?.histogram
+  );
+
+  // -----------------------------------------------------
+  // 15M MACD
+  // -----------------------------------------------------
+
+  const macd15m = Number(
+    marketData.macd15m?.macd
+  );
+
+  const macdSignal15m = Number(
+    marketData.macd15m?.signal
+  );
+
+  const macdHistogram15m = Number(
+    marketData.macd15m?.histogram
+  );
+
+  const macd15mTrend =
+    marketData.macd15m?.trend ||
+    marketData.macd15m?.direction ||
+    "Neutral";
+
+  // -----------------------------------------------------
+  // VWAP
+  //
+  // IMPORTANT:
+  // This must be NIFTY SPOT VWAP.
+  // Do NOT use futures VWAP here.
+  // -----------------------------------------------------
+
+  const vwap = Number(
+  marketData.vwap?.value ??
+  marketData.vwap?.vwap ??
+  marketData.vwap
+);
+
+  // -----------------------------------------------------
+  // ADX / DI
+  // -----------------------------------------------------
 
   const adx = Number(marketData.adx) || 0;
+
+  const plusDI = Number(
+    marketData.plusDI
+  ) || 0;
+
+  const minusDI = Number(
+    marketData.minusDI
+  ) || 0;
+
+  // Optional ADX slope supplied by technical engine
+  const adxSlope =
+    marketData.adxSlope ||
+    marketData.adx?.slope ||
+    "unknown";
+
+  // -----------------------------------------------------
+  // ATR
+  // -----------------------------------------------------
+
   const atr = Number(marketData.atr) || 0;
 
-  const support = Number(marketData.support);
-  const resistance = Number(marketData.resistance);
+  // -----------------------------------------------------
+  // VOLUME
+  // -----------------------------------------------------
+
+  const volumeRatio = Number(
+    marketData.volumeRatio
+  ) || 0;
+
+  const candleDirection =
+    marketData.candleDirection ||
+    "neutral";
+
+  // -----------------------------------------------------
+  // SUPPORT / RESISTANCE
+  // -----------------------------------------------------
+
+  const support = Number(
+    marketData.support
+  );
+
+  const resistance = Number(
+    marketData.resistance
+  );
+
+  // -----------------------------------------------------
+  // PCR
+  // -----------------------------------------------------
+
+  const pcr = Number(
+    marketData.pcr
+  );
+
+  // -----------------------------------------------------
+  // MARKET BIAS
+  // -----------------------------------------------------
 
   const marketBiasScore =
-    Number(marketData.marketBias?.score) || 0;
+    Number(
+      marketData.marketBias?.score
+    ) || 0;
+
+  const marketBias =
+    marketData.marketBias?.bias ||
+    "Neutral";
+
+  // -----------------------------------------------------
+  // BHAVISH SCORE
+  // -----------------------------------------------------
+
+  const bhavishScore =
+    Number(
+      marketData.bhavishScore?.score ??
+      marketData.bhavishScore
+    ) || 0;
+
+  // -----------------------------------------------------
+  // OI
+  // -----------------------------------------------------
+
+  const oi = marketData.oi || {};
+
+  const longBuildUp =
+    Number(oi.longBuildUp) || 0;
+
+  const shortBuildUp =
+    Number(oi.shortBuildUp) || 0;
+
+  const shortCovering =
+    Number(oi.shortCovering) || 0;
+
+  const longUnwinding =
+    Number(oi.longUnwinding) || 0;
+
+  // =====================================================
+  // REASONS
+  // =====================================================
 
   const reasons = [];
 
   // =====================================================
-  // BULLISH / BEARISH POINTS
+  // DIRECTION POINTS
+  //
+  // These determine CE / PE direction.
+  //
+  // They are separate from AI SCORE.
   // =====================================================
 
   let bullish = 0;
   let bearish = 0;
 
   // =====================================================
-  // 1. MARKET BIAS
-  // 15 POINTS
+  // 2. 15M MACD
+  //
+  // HIGHEST IMPORTANCE FOR DIRECTION
   // =====================================================
 
-  if (marketBiasScore >= 10) {
+  let bullish15M = false;
+  let bearish15M = false;
 
-    bullish += 15;
+  if (
+    Number.isFinite(macd15m) &&
+    Number.isFinite(macdSignal15m)
+  ) {
+
+    bullish15M =
+      macd15m > macdSignal15m;
+
+    bearish15M =
+      macd15m < macdSignal15m;
+
+    if (bullish15M) {
+
+      bullish += 25;
+
+      reasons.push(
+        "15M MACD Bullish"
+      );
+
+    } else if (bearish15M) {
+
+      bearish += 25;
+
+      reasons.push(
+        "15M MACD Bearish"
+      );
+
+    } else {
+
+      reasons.push(
+        "15M MACD Neutral"
+      );
+    }
+
+  } else {
+
+    // Use textual trend if numeric values
+    // are unavailable.
+
+    if (
+      String(macd15mTrend)
+        .toLowerCase()
+        .includes("bull")
+    ) {
+
+      bullish15M = true;
+      bullish += 20;
+
+      reasons.push(
+        "15M MACD Bullish"
+      );
+
+    } else if (
+      String(macd15mTrend)
+        .toLowerCase()
+        .includes("bear")
+    ) {
+
+      bearish15M = true;
+      bearish += 20;
+
+      reasons.push(
+        "15M MACD Bearish"
+      );
+
+    } else {
+
+      reasons.push(
+        "15M MACD Data Unavailable"
+      );
+    }
+  }
+
+  // =====================================================
+  // 3. 5M MACD
+  //
+  // ENTRY TIMING
+  // =====================================================
+
+  let bullish5M = false;
+  let bearish5M = false;
+
+  if (
+    Number.isFinite(macd5m) &&
+    Number.isFinite(macdSignal5m)
+  ) {
+
+    bullish5M =
+      macd5m > macdSignal5m;
+
+    bearish5M =
+      macd5m < macdSignal5m;
+
+    if (bullish5M) {
+
+      bullish += 15;
+
+      reasons.push(
+        "5M MACD Bullish"
+      );
+
+    } else if (bearish5M) {
+
+      bearish += 15;
+
+      reasons.push(
+        "5M MACD Bearish"
+      );
+
+    } else {
+
+      reasons.push(
+        "5M MACD Neutral"
+      );
+    }
+  }
+
+  // =====================================================
+  // 4. SPOT VWAP
+  //
+  // IMPORTANT:
+  // NIFTY SPOT VWAP ONLY
+  // =====================================================
+
+  let bullishVWAP = false;
+  let bearishVWAP = false;
+
+  if (
+    price > 0 &&
+    Number.isFinite(vwap) &&
+    vwap > 0
+  ) {
+
+    if (price > vwap) {
+
+      bullishVWAP = true;
+
+      bullish += 15;
+
+      reasons.push(
+        "NIFTY Spot Price Above VWAP"
+      );
+
+    } else if (price < vwap) {
+
+      bearishVWAP = true;
+
+      bearish += 15;
+
+      reasons.push(
+        "NIFTY Spot Price Below VWAP"
+      );
+
+    } else {
+
+      reasons.push(
+        "Price At VWAP"
+      );
+    }
+
+  } else {
 
     reasons.push(
-      "Market Bias Bullish"
+      "Spot VWAP Unavailable"
+    );
+  }
+
+  // =====================================================
+  // 5. ADX + DI
+  //
+  // ADX = STRENGTH
+  // DI = DIRECTION
+  //
+  // ADX IS NOT A HARD GATE
+  // =====================================================
+
+  let bullishDI = false;
+  let bearishDI = false;
+
+  if (
+    plusDI > 0 &&
+    minusDI > 0
+  ) {
+
+    bullishDI =
+      plusDI > minusDI;
+
+    bearishDI =
+      minusDI > plusDI;
+
+    if (bullishDI) {
+
+      bullish += 10;
+
+      reasons.push(
+        `+DI > -DI (${plusDI.toFixed(1)} > ${minusDI.toFixed(1)})`
+      );
+
+    } else if (bearishDI) {
+
+      bearish += 10;
+
+      reasons.push(
+        `-DI > +DI (${minusDI.toFixed(1)} > ${plusDI.toFixed(1)})`
+      );
+
+    }
+  }
+
+  // -----------------------------------------------------
+  // ADX STATE
+  // -----------------------------------------------------
+
+  if (adx >= 30) {
+
+    reasons.push(
+      "ADX Very Strong"
     );
 
-  } else if (marketBiasScore <= -10) {
-
-    bearish += 15;
+  } else if (adx >= 25) {
 
     reasons.push(
-      "Market Bias Bearish"
+      "ADX Strong"
+    );
+
+  } else if (adx >= 20) {
+
+    reasons.push(
+      "ADX Developing"
     );
 
   } else {
 
     reasons.push(
-      "Market Bias Neutral"
+      "ADX Weak — Trend Strength Limited"
+    );
+  }
+
+  // -----------------------------------------------------
+  // ADX SLOPE
+  // -----------------------------------------------------
+
+  const adxSlopeText =
+    String(adxSlope).toLowerCase();
+
+  if (
+    adxSlopeText.includes("rising") ||
+    adxSlopeText.includes("increasing")
+  ) {
+
+    reasons.push(
+      "ADX Strengthening"
+    );
+
+  } else if (
+    adxSlopeText.includes("falling") ||
+    adxSlopeText.includes("decreasing")
+  ) {
+
+    reasons.push(
+      "ADX Weakening"
     );
   }
 
   // =====================================================
-  // 2. EMA ALIGNMENT
-  // 20 POINTS
+  // 6. EMA STRUCTURE
   // =====================================================
 
   const bullishEMA =
@@ -86,62 +499,93 @@ export function generateAISignal(marketData) {
 
   if (bullishEMA) {
 
-    bullish += 20;
+    bullish += 10;
 
     reasons.push(
-      "Strong Bullish EMA Alignment"
+      "EMA Structure Bullish"
     );
 
   } else if (bearishEMA) {
 
-    bearish += 20;
+    bearish += 10;
 
     reasons.push(
-      "Strong Bearish EMA Alignment"
+      "EMA Structure Bearish"
     );
 
   } else {
 
-    reasons.push(
-      "EMA Trend Mixed"
-    );
+    // Partial EMA structure
+
+    if (
+      price > ema9 &&
+      ema9 > ema20
+    ) {
+
+      bullish += 5;
+
+      reasons.push(
+        "Short-Term EMA Structure Bullish"
+      );
+
+    } else if (
+      price < ema9 &&
+      ema9 < ema20
+    ) {
+
+      bearish += 5;
+
+      reasons.push(
+        "Short-Term EMA Structure Bearish"
+      );
+
+    } else {
+
+      reasons.push(
+        "EMA Structure Mixed"
+      );
+    }
   }
 
   // =====================================================
-  // 3. RSI
-  // 15 POINTS
+  // 7. RSI
+  //
+  // RSI IS CONFIRMATION
+  // NOT PRIMARY DIRECTION
   // =====================================================
 
-  if (rsi >= 55 && rsi < 70) {
-
-    bullish += 15;
-
-    reasons.push(
-      "RSI Bullish"
-    );
-
-  } else if (rsi <= 45 && rsi > 30) {
-
-    bearish += 15;
-
-    reasons.push(
-      "RSI Bearish"
-    );
-
-  } else if (rsi >= 70) {
-
-    bearish += 5;
-
-    reasons.push(
-      "RSI Overbought"
-    );
-
-  } else if (rsi <= 30) {
+  if (
+    rsi >= 55 &&
+    rsi < 70
+  ) {
 
     bullish += 5;
 
     reasons.push(
-      "RSI Oversold"
+      "RSI Supports Bullish Momentum"
+    );
+
+  } else if (
+    rsi <= 45 &&
+    rsi > 30
+  ) {
+
+    bearish += 5;
+
+    reasons.push(
+      "RSI Supports Bearish Momentum"
+    );
+
+  } else if (rsi >= 70) {
+
+    reasons.push(
+      "RSI Overbought — Avoid Chasing"
+    );
+
+  } else if (rsi <= 30) {
+
+    reasons.push(
+      "RSI Oversold — Avoid Chasing"
     );
 
   } else {
@@ -152,275 +596,644 @@ export function generateAISignal(marketData) {
   }
 
   // =====================================================
-  // 4. MACD
-  // 15 POINTS
+  // 8. PCR
+  //
+  // PCR = CONFIRMATION
+  // Not standalone direction.
   // =====================================================
 
-  if (macd > macdSignal) {
+  if (Number.isFinite(pcr)) {
 
-    bullish += 15;
+    if (pcr > 1.05) {
 
-    reasons.push(
-      "MACD Bullish"
-    );
-
-  } else if (macd < macdSignal) {
-
-    bearish += 15;
-
-    reasons.push(
-      "MACD Bearish"
-    );
-
-  } else {
-
-    reasons.push(
-      "MACD Neutral"
-    );
-  }
-
-  // =====================================================
-  // 5. PRICE vs EMA9
-  // 5 POINTS
-  // =====================================================
-
-  if (price > ema9) {
-
-    bullish += 5;
-
-    reasons.push(
-      "Price Above EMA9"
-    );
-
-  } else if (price < ema9) {
-
-    bearish += 5;
-
-    reasons.push(
-      "Price Below EMA9"
-    );
-
-  } else {
-
-    reasons.push(
-      "Price Near EMA9"
-    );
-  }
-
-  // =====================================================
-  // 6. ADX / TREND STRENGTH
-  // 10 POINTS
-  // =====================================================
-
-  if (adx >= 25) {
-
-    if (bullishEMA) {
-
-      bullish += 10;
+      bullish += 5;
 
       reasons.push(
-        "Strong Bullish Trend Strength"
+        `PCR Bullish (${pcr.toFixed(2)})`
       );
 
-    } else if (bearishEMA) {
+    } else if (pcr < 0.80) {
 
-      bearish += 10;
+      bearish += 5;
 
       reasons.push(
-        "Strong Bearish Trend Strength"
+        `PCR Bearish (${pcr.toFixed(2)})`
       );
 
     } else {
 
       reasons.push(
-        "Strong ADX but Direction Mixed"
+        `PCR Neutral (${pcr.toFixed(2)})`
       );
     }
 
-  } else if (adx >= 20) {
+  } else {
 
-    if (bullishEMA) {
+    reasons.push(
+      "PCR Unavailable"
+    );
+  }
+
+  // =====================================================
+  // 9. OI CONTEXT
+  //
+  // Missing OI = NO PENALTY
+  // =====================================================
+
+  const bullishOI =
+    longBuildUp +
+    shortCovering;
+
+  const bearishOI =
+    shortBuildUp +
+    longUnwinding;
+
+  if (
+    bullishOI > 0 ||
+    bearishOI > 0
+  ) {
+
+    if (bullishOI > bearishOI) {
 
       bullish += 5;
 
-    } else if (bearishEMA) {
+      reasons.push(
+        "OI Structure Supports Bullish Side"
+      );
+
+    } else if (
+      bearishOI > bullishOI
+    ) {
 
       bearish += 5;
+
+      reasons.push(
+        "OI Structure Supports Bearish Side"
+      );
+
+    } else {
+
+      reasons.push(
+        "OI Structure Mixed"
+      );
     }
 
+  } else {
+
     reasons.push(
-      "Moderate Trend Strength"
+      "OI Direction Unavailable"
+    );
+  }
+
+  // =====================================================
+  // 10. VOLUME
+  //
+  // Confirmation only.
+  // =====================================================
+
+  if (volumeRatio >= 1.5) {
+
+    reasons.push(
+      "Strong Volume Confirmation"
+    );
+
+  } else if (volumeRatio >= 1.0) {
+
+    reasons.push(
+      "Moderate Volume Confirmation"
+    );
+
+  } else if (
+    volumeRatio > 0 &&
+    volumeRatio < 1
+  ) {
+
+    reasons.push(
+      "Volume Confirmation Weak"
+    );
+  }
+
+  // =====================================================
+  // 11. CANDLE DIRECTION
+  // =====================================================
+
+  if (
+    String(candleDirection)
+      .toLowerCase()
+      .includes("bull")
+  ) {
+
+    bullish += 2;
+
+  } else if (
+    String(candleDirection)
+      .toLowerCase()
+      .includes("bear")
+  ) {
+
+    bearish += 2;
+  }
+
+  // =====================================================
+  // 12. MARKET BIAS
+  //
+  // SECONDARY CONTEXT
+  // Avoid heavy double counting.
+  // =====================================================
+
+  if (marketBiasScore >= 30) {
+
+    bullish += 3;
+
+    reasons.push(
+      "Market Bias Bullish"
+    );
+
+  } else if (marketBiasScore <= -30) {
+
+    bearish += 3;
+
+    reasons.push(
+      "Market Bias Bearish"
     );
 
   } else {
 
     reasons.push(
-      "Weak Trend — Confidence Reduced"
+      "Market Bias Neutral"
     );
   }
 
   // =====================================================
-  // 7. SUPPORT / RESISTANCE
+  // 13. SUPPORT / RESISTANCE
+  //
   // CONTEXT ONLY
   // =====================================================
 
+  let nearSupport = false;
+  let nearResistance = false;
+
   if (
     Number.isFinite(support) &&
-    support > 0 &&
-    price <= support * 1.002
+    support > 0
   ) {
 
-    reasons.push(
-      "Price Near Strong Support"
-    );
+    nearSupport =
+      price <= support * 1.002;
+
+    if (nearSupport) {
+
+      reasons.push(
+        "Price Near Support"
+      );
+    }
   }
 
   if (
     Number.isFinite(resistance) &&
-    resistance > 0 &&
-    price >= resistance * 0.998
+    resistance > 0
   ) {
 
+    nearResistance =
+      price >= resistance * 0.998;
+
+    if (nearResistance) {
+
+      reasons.push(
+        "Price Near Resistance"
+      );
+    }
+  }
+
+  // =====================================================
+  // 14. DIRECTION
+  // =====================================================
+
+  const directionDifference =
+    Math.abs(
+      bullish - bearish
+    );
+
+  let direction = "NEUTRAL";
+
+  if (
+    bullish > bearish &&
+    directionDifference >= 10
+  ) {
+
+    direction = "BULLISH";
+
+  } else if (
+    bearish > bullish &&
+    directionDifference >= 10
+  ) {
+
+    direction = "BEARISH";
+  }
+
+  // =====================================================
+  // 15. MAJOR CONFLICT DETECTION
+  // =====================================================
+
+  const bullishCore =
+    bullish15M &&
+    bullishVWAP &&
+    bullishDI;
+
+  const bearishCore =
+    bearish15M &&
+    bearishVWAP &&
+    bearishDI;
+
+  const bullishMajorConflict =
+    bearish15M &&
+    bullishVWAP &&
+    bullishDI;
+
+  const bearishMajorConflict =
+    bullish15M &&
+    bearishVWAP &&
+    bearishDI;
+
+  let conflict = false;
+
+  if (
+    bullishMajorConflict ||
+    bearishMajorConflict
+  ) {
+
+    conflict = true;
+
     reasons.push(
-      "Price Near Strong Resistance"
+      "Major Signal Conflict — Waiting for Confirmation"
     );
   }
 
   // =====================================================
-  // AI SCORE
+  // 16. AI SCORE
   //
-  // IMPORTANT:
-  // This is SETUP STRENGTH, not direction.
+  // SETUP STRENGTH ONLY
   //
-  // Strong Bullish = high score
-  // Strong Bearish = high score
-  // Mixed = low/medium score
+  // Score considers:
+  // - HTF alignment
+  // - LTF alignment
+  // - VWAP
+  // - DI
+  // - Bhavish Score
+  // - ADX
+  // - Volume
+  //
+  // It does NOT decide direction by itself.
   // =====================================================
 
-  // =====================================================
-// FAIR AI SCORE
-// Maximum possible directional points = 80
-// =====================================================
+  let setupPoints = 0;
 
-const dominantPoints =
-  Math.max(bullish, bearish);
+  // -----------------------------------------------------
+  // 15M direction
+  // -----------------------------------------------------
 
-const MAX_SCORE_POINTS = 80;
+  if (
+    bullish15M ||
+    bearish15M
+  ) {
 
-let score =
-  (dominantPoints / MAX_SCORE_POINTS) * 100;
+    setupPoints += 20;
+  }
 
-// Weak trend penalty
-if (adx < 20) {
-  score -= 10;
-} else if (adx < 25) {
-  score -= 5;
-}
+  // -----------------------------------------------------
+  // 5M direction
+  // -----------------------------------------------------
 
-// Clamp 0 - 100
-score = Math.round(
-  Math.max(
-    0,
-    Math.min(100, score)
-  )
-);
-  // =====================================================
-  // CONFIDENCE
-  // =====================================================
+  if (
+    bullish5M ||
+    bearish5M
+  ) {
 
-  let confidence = score;
+    setupPoints += 15;
+  }
 
-  // Weak ADX reduces confidence
+  // -----------------------------------------------------
+  // VWAP
+  // -----------------------------------------------------
+
+  if (
+    bullishVWAP ||
+    bearishVWAP
+  ) {
+
+    setupPoints += 15;
+  }
+
+  // -----------------------------------------------------
+  // DI
+  // -----------------------------------------------------
+
+  if (
+    bullishDI ||
+    bearishDI
+  ) {
+
+    setupPoints += 10;
+  }
+
+  // -----------------------------------------------------
+  // Bhavish Score
+  //
+  // Use absolute value because it represents
+  // setup strength/context.
+  // -----------------------------------------------------
+
+  const bhavishStrength =
+    Math.min(
+      20,
+      Math.abs(bhavishScore) * 0.20
+    );
+
+  setupPoints +=
+    bhavishStrength;
+
+  // -----------------------------------------------------
+  // ADX strength
+  // -----------------------------------------------------
+
+  if (adx >= 30) {
+
+    setupPoints += 10;
+
+  } else if (adx >= 25) {
+
+    setupPoints += 8;
+
+  } else if (adx >= 20) {
+
+    setupPoints += 5;
+  }
+
+  // -----------------------------------------------------
+  // Volume
+  // -----------------------------------------------------
+
+  if (volumeRatio >= 1.5) {
+
+    setupPoints += 5;
+
+  } else if (volumeRatio >= 1.0) {
+
+    setupPoints += 3;
+  }
+
+  // -----------------------------------------------------
+  // EMA structure
+  // -----------------------------------------------------
+
+  if (
+    bullishEMA ||
+    bearishEMA
+  ) {
+
+    setupPoints += 5;
+  }
+
+  // -----------------------------------------------------
+  // Penalties
+  // -----------------------------------------------------
 
   if (adx < 20) {
 
-    confidence -= 15;
-
-  } else if (adx < 25) {
-
-    confidence -= 7;
+    setupPoints -= 10;
   }
 
-  // Mixed EMA reduces confidence
-
   if (
-    !bullishEMA &&
-    !bearishEMA
+    conflict
   ) {
 
-    confidence -= 5;
+    setupPoints -= 15;
+  }
+
+  if (
+    !bullishCore &&
+    !bearishCore
+  ) {
+
+    setupPoints -= 5;
+  }
+
+  // Clamp
+  let score = Math.round(
+    Math.max(
+      0,
+      Math.min(
+        100,
+        setupPoints
+      )
+    )
+  );
+
+  // =====================================================
+  // 17. CONFIDENCE
+  //
+  // DIFFERENT FROM SCORE
+  //
+  // Confidence asks:
+  // "How confident are we in the selected direction?"
+  // =====================================================
+
+  let confidence = 40;
+
+  // HTF confirmation
+  if (
+    bullish15M ||
+    bearish15M
+  ) {
+
+    confidence += 15;
+  }
+
+  // 5M confirmation
+  if (
+    bullish5M ||
+    bearish5M
+  ) {
+
+    confidence += 10;
+  }
+
+  // VWAP
+  if (
+    bullishVWAP ||
+    bearishVWAP
+  ) {
+
+    confidence += 10;
+  }
+
+  // DI
+  if (
+    bullishDI ||
+    bearishDI
+  ) {
+
+    confidence += 10;
+  }
+
+  // Directional agreement
+  if (
+    directionDifference >= 20
+  ) {
+
+    confidence += 10;
+
+  } else if (
+    directionDifference < 10
+  ) {
+
+    confidence -= 10;
+  }
+
+  // ADX
+  if (adx >= 30) {
+
+    confidence += 5;
+
+  } else if (adx < 20) {
+
+    confidence -= 10;
+  }
+
+  // Major conflict
+  if (conflict) {
+
+    confidence -= 20;
   }
 
   confidence = Math.round(
     Math.max(
       20,
-      Math.min(95, confidence)
+      Math.min(
+        95,
+        confidence
+      )
     )
   );
 
   // =====================================================
-  // FINAL SIGNAL
+  // 18. FINAL SIGNAL
   // =====================================================
 
   let signal = "WAIT";
 
-  // Bullish setup
+  // -----------------------------------------------------
+  // BUY CE
+  // -----------------------------------------------------
 
- if (
-  bullish > bearish &&
-  score >= 65 &&
-  confidence >= 60 &&
-  marketBiasScore > -20
-) {
+  if (
+    direction === "BULLISH" &&
+    !conflict &&
+    bullish15M &&
+    bullishVWAP &&
+    bullishDI &&
+    score >= 55 &&
+    confidence >= 55
+  ) {
 
-  signal = "BUY CE";
-}
+    signal = "BUY CE";
+  }
 
-else if (
-  bearish > bullish &&
-  score >= 65 &&
-  confidence >= 60 &&
-  marketBiasScore < 20
-) {
+  // -----------------------------------------------------
+  // BUY PE
+  // -----------------------------------------------------
 
-  signal = "BUY PE";
-}
+  else if (
+    direction === "BEARISH" &&
+    !conflict &&
+    bearish15M &&
+    bearishVWAP &&
+    bearishDI &&
+    score >= 55 &&
+    confidence >= 55
+  ) {
 
-  // Otherwise WAIT
+    signal = "BUY PE";
+  }
+
+  // -----------------------------------------------------
+  // WAIT
+  // -----------------------------------------------------
 
   else {
 
     signal = "WAIT";
+
+    if (conflict) {
+
+      reasons.push(
+        "WAIT — Signal Conflict"
+      );
+
+    } else if (
+      direction === "BULLISH"
+    ) {
+
+      reasons.push(
+        "WAIT — Bullish Bias Developing; Wait for CE Confirmation"
+      );
+
+    } else if (
+      direction === "BEARISH"
+    ) {
+
+      reasons.push(
+        "WAIT — Bearish Bias Developing; Wait for PE Confirmation"
+      );
+
+    } else {
+
+      reasons.push(
+        "WAIT — Market Direction Not Confirmed"
+      );
+    }
   }
 
   // =====================================================
-  // RISK
+  // 19. RISK
   // =====================================================
 
-  let risk = "HIGH";
+  let risk = "NO TRADE";
 
   if (
-    score >= 80 &&
-    confidence >= 75 &&
-    adx >= 25
+    signal === "BUY CE" ||
+    signal === "BUY PE"
   ) {
 
-    risk = "LOW";
+    if (
+      score >= 80 &&
+      confidence >= 75 &&
+      adx >= 25
+    ) {
 
-  } else if (
-    score >= 65 &&
-    confidence >= 60
-  ) {
+      risk = "LOW";
 
-    risk = "MEDIUM";
+    } else if (
+      score >= 65 &&
+      confidence >= 60
+    ) {
 
-  } else {
+      risk = "MEDIUM";
 
-    risk = "HIGH";
+    } else {
+
+      risk = "HIGH";
+    }
   }
 
   // =====================================================
-  // ENTRY / STOP LOSS / TARGETS
+  // 20. ENTRY / SL / TARGETS
+  //
+  // IMPORTANT:
+  // These are UNDERLYING NIFTY levels.
+  //
+  // Option premium levels will be handled later
+  // by a separate option selector engine.
   // =====================================================
 
   let entry = null;
@@ -428,64 +1241,57 @@ else if (
   let target1 = null;
   let target2 = null;
 
-  // =====================================================
-  // BUY CE
-  // =====================================================
+  if (
+    signal === "BUY CE" &&
+    price > 0 &&
+    atr > 0
+  ) {
 
-if (signal === "BUY CE") {
+    entry =
+      +price.toFixed(2);
 
-  // Entry
-  entry =
-    +price.toFixed(2);
+    stopLoss =
+      +(price - atr).toFixed(2);
 
-  // Stop Loss = Entry - ATR
-  stopLoss =
-    +(price - atr).toFixed(2);
+    target1 =
+      +(price + atr).toFixed(2);
 
-  // Target 1 = Entry + ATR
-  target1 =
-    +(price + atr).toFixed(2);
+    target2 =
+      +(price + atr * 2).toFixed(2);
+  }
 
-  // Target 2 = Entry + 2 ATR
-  target2 =
-    +(price + atr * 2).toFixed(2);
-}
-  // =====================================================
-  // BUY PE
-  // =====================================================
+  if (
+    signal === "BUY PE" &&
+    price > 0 &&
+    atr > 0
+  ) {
 
- if (signal === "BUY PE") {
+    entry =
+      +price.toFixed(2);
 
-  // Entry
-  entry =
-    +price.toFixed(2);
+    stopLoss =
+      +(price + atr).toFixed(2);
 
-  // Stop Loss = Entry + ATR
-  stopLoss =
-    +(price + atr).toFixed(2);
+    target1 =
+      +(price - atr).toFixed(2);
 
-  // Target 1 = Entry - ATR
-  target1 =
-    +(price - atr).toFixed(2);
-
-  // Target 2 = Entry - 2 ATR
-  target2 =
-    +(price - atr * 2).toFixed(2);
-}
+    target2 =
+      +(price - atr * 2).toFixed(2);
+  }
 
   // =====================================================
-  // ATR
+  // 21. ATR INFORMATION
   // =====================================================
 
   if (atr > 0) {
 
     reasons.push(
-      "ATR Available for Risk Management"
+      `ATR ${atr.toFixed(2)} available for risk management`
     );
   }
 
   // =====================================================
-  // FINAL RESULT
+  // 22. FINAL RESULT
   // =====================================================
 
   return {
@@ -507,5 +1313,54 @@ if (signal === "BUY CE") {
     target2,
 
     reasons,
+
+    // ---------------------------------------------------
+    // Extra internal information
+    // ---------------------------------------------------
+
+    direction,
+
+    bullishPoints: bullish,
+
+    bearishPoints: bearish,
+
+    conflict,
+
+    trendStrength:
+      adx >= 30
+        ? "VERY STRONG"
+        : adx >= 25
+        ? "STRONG"
+        : adx >= 20
+        ? "DEVELOPING"
+        : "WEAK",
+
+    vwapPosition:
+      bullishVWAP
+        ? "ABOVE"
+        : bearishVWAP
+        ? "BELOW"
+        : "AT",
+
+    diDirection:
+      bullishDI
+        ? "BULLISH"
+        : bearishDI
+        ? "BEARISH"
+        : "NEUTRAL",
+
+    marketBias,
+
+    bhavishScore,
+
+    // Context flags
+    nearSupport,
+    nearResistance,
+
+    // Used later by option selector
+    underlyingPrice:
+      price > 0
+        ? +price.toFixed(2)
+        : null,
   };
 }

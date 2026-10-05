@@ -573,18 +573,78 @@ console.log("Action:", bhavishScore.action);
 console.log("Factors:", bhavishScore.factors);
 console.log("============================");
   const ai = generateAISignal({
+  // ================================
+  // PRICE
+  // ================================
   price: data.nifty,
+
+  // ================================
+  // EMA
+  // ================================
   ema9: data.ema.ema9,
   ema20: data.ema.ema20,
   ema50: data.ema.ema50,
+
+  // ================================
+  // RSI
+  // ================================
   rsi: data.rsi,
-  macd: data.macd.macd,
-  macdSignal: data.macd.signal,
-  adx: data.adx.adx,
-  atr: data.atr.atr,
-support: niftyLevels.support,
-resistance: niftyLevels.resistance,
-marketBias,
+
+  // ================================
+  // 5M MACD
+  // ================================
+  macd5m: niftyTechnical?.macd ?? null,
+
+  // ================================
+  // 15M MACD
+  // ================================
+  macd15m: niftyTechnical?.macd15m ?? null,
+
+  // ================================
+  // VWAP
+  // ================================
+  vwap: niftyTechnical?.vwap ?? null,
+
+  // ================================
+  // ADX + DI
+  // ================================
+  adx: data.adx?.adx ?? null,
+  plusDI: data.adx?.plusDI ?? null,
+  minusDI: data.adx?.minusDI ?? null,
+
+  // ================================
+  // ATR
+  // ================================
+  atr: data.atr?.atr ?? null,
+
+  // ================================
+  // VOLUME
+  // ================================
+  volumeRatio: niftyTechnical?.volumeRatio ?? null,
+  candleDirection:
+    niftyTechnical?.candleDirection ?? "neutral",
+
+  // ================================
+  // MARKET LEVELS
+  // ================================
+  support: niftyLevels.support,
+  resistance: niftyLevels.resistance,
+
+  // ================================
+  // DERIVATIVES
+  // ================================
+  pcr: data.pcr ?? null,
+  oi: data.oi ?? null,
+
+  // ================================
+  // MARKET CONTEXT
+  // ================================
+  marketBias: marketBias ?? null,
+
+  // ================================
+  // BHAVISH SCORE
+  // ================================
+  bhavishScore: bhavishScore ?? null,
 });
 
   data.ai.signal = ai.signal;
