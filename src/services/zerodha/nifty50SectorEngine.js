@@ -8,6 +8,8 @@
 //      ↓
 // Zerodha live quotes
 //      ↓
+// Stock OHLC + LTP
+//      ↓
 // Stock % Change
 //      ↓
 // Weighted Contribution
@@ -18,26 +20,6 @@
 //      ↓
 // Weight-Based Sector Score
 //
-// NEW SCORE MODEL:
-//
-// Sector Weight = Maximum Score
-// +2% performance = Full Positive Score
-// -2% performance = Full Negative Score
-//
-// Example:
-//
-// IT weight = 7.76
-//
-// +0.10% → +0.388
-// +0.50% → +1.940
-// +1.00% → +3.880
-// +1.50% → +5.820
-// +2.00% → +7.760
-// +3.00% → +7.760  (capped)
-//
-// Same logic for negative side.
-//
-// UI is NOT touched here.
 // ======================================================
 
 import { getKiteClient } from "./client";
@@ -56,14 +38,17 @@ import {
 // SCORE SETTINGS
 // ======================================================
 //
-// A sector reaching ±2% gets its full NIFTY weight
-// as its maximum score.
+// A sector reaching +2% gets full positive score.
+// A sector reaching -2% gets full negative score.
 //
 // Example:
 //
-// IT weight = 7.76
-// +2% = +7.76
-// -2% = -7.76
+// IT Weight = 7.76
+//
+// +0.50% → +1.94
+// +1.00% → +3.88
+// +2.00% → +7.76
+// +3.00% → +7.76  (capped)
 //
 // ======================================================
 
@@ -87,6 +72,7 @@ const NIFTY_INDEX_WEIGHT_TOTAL =
 // ======================================================
 
 async function getNifty50Quotes() {
+
   const accessToken =
     await getAccessToken();
 
@@ -103,37 +89,52 @@ async function getNifty50Quotes() {
     accessToken
   );
 
+
+  // ----------------------------------------------------
+  // Build NSE symbols
+  // ----------------------------------------------------
+
   const instruments =
     NIFTY50_STOCKS.map(
       (stock) =>
         `NSE:${stock.symbol}`
     );
 
+
+  // ----------------------------------------------------
+  // Zerodha quote request
+  // ----------------------------------------------------
+
   const quotes = {};
 
   const batchSize = 50;
+
 
   for (
     let i = 0;
     i < instruments.length;
     i += batchSize
   ) {
+
     const batch =
       instruments.slice(
         i,
         i + batchSize
       );
 
+
     const response =
       await kite.getQuote(
         batch
       );
+
 
     Object.assign(
       quotes,
       response
     );
   }
+
 
   return quotes;
 }
@@ -147,6 +148,11 @@ function calculateStockData(
   stock,
   quote
 ) {
+
+  // ----------------------------------------------------
+  // NIFTY WEIGHT
+  // ----------------------------------------------------
+
   const weight =
     Number(
       NIFTY50_WEIGHTS[
@@ -154,42 +160,100 @@ function calculateStockData(
       ] || 0
     );
 
+
+  // ----------------------------------------------------
+  // LIVE PRICE
+  // ----------------------------------------------------
+
   const ltp =
     Number(
       quote?.last_price || 0
     );
+
+
+  // ----------------------------------------------------
+  // TODAY OPEN
+  // ----------------------------------------------------
+
+  const open =
+    Number(
+      quote?.ohlc?.open || 0
+    );
+
+
+  // ----------------------------------------------------
+  // TODAY HIGH
+  // ----------------------------------------------------
+
+  const high =
+    Number(
+      quote?.ohlc?.high || 0
+    );
+
+
+  // ----------------------------------------------------
+  // TODAY LOW
+  // ----------------------------------------------------
+
+  const low =
+    Number(
+      quote?.ohlc?.low || 0
+    );
+
+
+  // ----------------------------------------------------
+  // PREVIOUS CLOSE
+  // ----------------------------------------------------
 
   const previousClose =
     Number(
       quote?.ohlc?.close || 0
     );
 
+
+  // ====================================================
+  // PRICE CHANGE
+  // ====================================================
+
+  let change = 0;
+
   let changePercent = 0;
+
 
   if (
     previousClose > 0 &&
     ltp > 0
   ) {
+
+    change =
+      ltp -
+      previousClose;
+
+
     changePercent =
       (
-        (ltp - previousClose) /
+        change /
         previousClose
       ) * 100;
   }
 
 
-  // ----------------------------------------------------
-  // Weighted contribution
+  // ====================================================
+  // WEIGHTED CONTRIBUTION
+  // ====================================================
   //
   // Example:
   //
-  // Weight = 10%
-  // Stock change = +2%
+  // Stock Weight = 10%
+  // Stock Change = +2%
   //
   // Contribution =
+  //
   // 10 × 2 / 100
+  //
   // = +0.20
-  // ----------------------------------------------------
+  //
+  // ====================================================
 
   const weightedContribution =
     (
@@ -198,7 +262,16 @@ function calculateStockData(
     ) / 100;
 
 
+  // ====================================================
+  // STOCK DATA
+  // ====================================================
+
   return {
+
+    // --------------------------------------------------
+    // BASIC INFORMATION
+    // --------------------------------------------------
+
     symbol:
       stock.symbol,
 
@@ -211,24 +284,67 @@ function calculateStockData(
     subSector:
       stock.subSector,
 
-    weight,
+    weight:
 
-    ltp,
 
-    previousClose,
+      Number(
+        weight.toFixed(4)
+      ),
+
+
+    // --------------------------------------------------
+    // TODAY PRICE DATA
+    // --------------------------------------------------
+
+    open:
+      Number(
+        open.toFixed(2)
+      ),
+
+    high:
+      Number(
+        high.toFixed(2)
+      ),
+
+    low:
+      Number(
+        low.toFixed(2)
+      ),
+
+    ltp:
+      Number(
+        ltp.toFixed(2)
+      ),
+
+
+    // --------------------------------------------------
+    // PREVIOUS CLOSE
+    // --------------------------------------------------
+
+    previousClose:
+      Number(
+        previousClose.toFixed(2)
+      ),
+
+
+    // --------------------------------------------------
+    // PRICE CHANGE
+    // --------------------------------------------------
 
     change:
       Number(
-        (
-          ltp -
-          previousClose
-        ).toFixed(2)
+        change.toFixed(2)
       ),
 
     changePercent:
       Number(
         changePercent.toFixed(4)
       ),
+
+
+    // --------------------------------------------------
+    // NIFTY CONTRIBUTION
+    // --------------------------------------------------
 
     weightedContribution:
       Number(
@@ -245,40 +361,65 @@ function calculateStockData(
 function buildSectorData(
   stocks
 ) {
+
   const sectorMap = {};
 
 
-  // ----------------------------------------------------
-  // Group stocks by primary sector
-  // ----------------------------------------------------
+  // ====================================================
+  // GROUP STOCKS BY SECTOR
+  // ====================================================
 
   for (
     const stock of stocks
   ) {
+
     const sector =
       stock.sector;
 
-    if (!sectorMap[sector]) {
+
+    if (
+      !sectorMap[sector]
+    ) {
+
       sectorMap[sector] = {
+
         sector,
 
-        sectorWeight: 0,
+        sectorWeight:
+          0,
 
-        contribution: 0,
+        contribution:
+          0,
 
-        stocks: [],
+        stocks:
+          [],
       };
     }
+
+
+    // --------------------------------------------------
+    // Add sector weight
+    // --------------------------------------------------
 
     sectorMap[
       sector
     ].sectorWeight +=
       stock.weight;
 
+
+    // --------------------------------------------------
+    // Add weighted contribution
+    // --------------------------------------------------
+
     sectorMap[
       sector
     ].contribution +=
       stock.weightedContribution;
+
+
+    // --------------------------------------------------
+    // Add stock
+    // --------------------------------------------------
 
     sectorMap[
       sector
@@ -288,10 +429,9 @@ function buildSectorData(
   }
 
 
-  // ----------------------------------------------------
-  // Calculate sector performance
-  // + weight-based sector score
-  // ----------------------------------------------------
+  // ====================================================
+  // CALCULATE SECTOR DATA
+  // ====================================================
 
   const sectors =
     Object.values(
@@ -299,21 +439,10 @@ function buildSectorData(
     ).map(
       (sector) => {
 
-        // ----------------------------------------------
-        // Sector Performance
-        //
-        // Weighted sector contribution /
-        // sector total weight
-        //
-        // Example:
-        //
-        // contribution = 0.1881
-        // weight       = 7.76
-        //
-        // performance =
-        // 0.1881 / 7.76 × 100
-        // = +2.424%
-        // ----------------------------------------------
+
+        // ==============================================
+        // SECTOR PERFORMANCE
+        // ==============================================
 
         const sectorPerformance =
           sector.sectorWeight > 0
@@ -324,22 +453,17 @@ function buildSectorData(
             : 0;
 
 
-        // ----------------------------------------------
-        // NEW SECTOR SCORE
+        // ==============================================
+        // SECTOR SCORE
+        // ==============================================
         //
-        // Sector weight = maximum score
+        // +2% performance
+        // = full positive score
         //
-        // Formula:
+        // -2% performance
+        // = full negative score
         //
-        // performance / 2 × sector weight
-        //
-        // Then cap between:
-        //
-        // -sectorWeight
-        // +
-        // sectorWeight
-        //
-        // ----------------------------------------------
+        // ==============================================
 
         const rawScore =
           (
@@ -349,9 +473,14 @@ function buildSectorData(
           sector.sectorWeight;
 
 
+        // ==============================================
+        // CAP SCORE
+        // ==============================================
+
         const score =
           Math.max(
             -sector.sectorWeight,
+
             Math.min(
               sector.sectorWeight,
               rawScore
@@ -359,43 +488,53 @@ function buildSectorData(
           );
 
 
-        // ----------------------------------------------
-        // Direction
-        //
-        // IMPORTANT:
-        // Direction is now based on performance,
-        // not old +100 score.
-        // ----------------------------------------------
+        // ==============================================
+        // DIRECTION
+        // ==============================================
 
         let direction =
           "Neutral";
 
+
         if (
           sectorPerformance >= 2
         ) {
+
           direction =
             "Bullish";
+
         } else if (
           sectorPerformance > 0.5
         ) {
+
           direction =
             "Positive";
+
         } else if (
           sectorPerformance <= -2
         ) {
+
           direction =
             "Bearish";
+
         } else if (
           sectorPerformance < -0.5
         ) {
+
           direction =
             "Negative";
         }
 
 
+        // ==============================================
+        // RETURN SECTOR
+        // ==============================================
+
         return {
+
           sector:
             sector.sector,
+
 
           sectorWeight:
             Number(
@@ -404,12 +543,14 @@ function buildSectorData(
               )
             ),
 
+
           performance:
             Number(
               sectorPerformance.toFixed(
                 4
               )
             ),
+
 
           contribution:
             Number(
@@ -418,15 +559,23 @@ function buildSectorData(
               )
             ),
 
+
           score:
             Number(
               score.toFixed(2)
             ),
 
+
           direction,
+
 
           stockCount:
             sector.stocks.length,
+
+
+          // IMPORTANT
+          // All NIFTY 50 stocks
+          // belonging to this sector
 
           stocks:
             sector.stocks,
@@ -435,9 +584,9 @@ function buildSectorData(
     );
 
 
-  // ----------------------------------------------------
-  // Sort strongest → weakest
-  // ----------------------------------------------------
+  // ====================================================
+  // SORT STRONGEST → WEAKEST
+  // ====================================================
 
   sectors.sort(
     (a, b) =>
@@ -451,71 +600,61 @@ function buildSectorData(
 
 
 // ======================================================
-// MAIN ENGINE
+// GET NIFTY 50 SECTOR DATA
 // ======================================================
 
 export async function getNifty50SectorData() {
 
-  // ----------------------------------------------------
-  // Get live Zerodha quotes
-  // ----------------------------------------------------
+  // ====================================================
+  // GET LIVE QUOTES
+  // ====================================================
 
   const quotes =
     await getNifty50Quotes();
 
 
-  // ----------------------------------------------------
-  // Calculate individual stock data
-  // ----------------------------------------------------
+  // ====================================================
+  // CALCULATE EACH STOCK
+  // ====================================================
 
-  const stockData = [];
+  const stocks =
+    NIFTY50_STOCKS.map(
+      (stock) => {
 
-  for (
-    const stock of NIFTY50_STOCKS
-  ) {
+        const quoteKey =
+          `NSE:${stock.symbol}`;
 
-    const quote =
-      quotes[
-        `NSE:${stock.symbol}`
-      ];
 
-    if (!quote) {
+        const quote =
+          quotes[
+            quoteKey
+          ];
 
-      console.warn(
-        `NIFTY 50 quote missing: ${stock.symbol}`
-      );
 
-      continue;
-    }
-
-    const data =
-      calculateStockData(
-        stock,
-        quote
-      );
-
-    stockData.push(
-      data
+        return calculateStockData(
+          stock,
+          quote
+        );
+      }
     );
-  }
 
 
-  // ----------------------------------------------------
-  // Build sector aggregation
-  // ----------------------------------------------------
+  // ====================================================
+  // BUILD SECTORS
+  // ====================================================
 
   const sectors =
     buildSectorData(
-      stockData
+      stocks
     );
 
 
-  // ----------------------------------------------------
-  // Total NIFTY contribution
-  // ----------------------------------------------------
+  // ====================================================
+  // TOTAL CONTRIBUTION
+  // ====================================================
 
   const totalContribution =
-    stockData.reduce(
+    stocks.reduce(
       (sum, stock) =>
         sum +
         stock.weightedContribution,
@@ -523,113 +662,187 @@ export async function getNifty50SectorData() {
     );
 
 
-  // ----------------------------------------------------
-  // Calculate overall sector score
-  //
-  // IMPORTANT:
-  //
-  // We now SUM the 15 sector scores.
-  //
-  // Because every sector's maximum score is its
-  // NIFTY weight, total maximum is approximately
-  // 100.
-  //
-  // Example:
-  //
-  // IT max       = 7.76
-  // Auto max     = 6.43
-  // Financial    = 37.76
-  // ...
-  //
-  // Total ≈ 99.98
-  //
-  // Therefore:
-  //
-  // Overall Score ≈ -100 to +100
-  //
-  // ----------------------------------------------------
+  // ====================================================
+  // WEIGHT COVERED
+  // ====================================================
 
-  const overallSectorScore =
-    sectors.reduce(
-      (sum, sector) =>
+  const weightTotal =
+    stocks.reduce(
+      (sum, stock) =>
         sum +
-        Number(
-          sector.score || 0
-        ),
+        stock.weight,
       0
     );
 
 
-  // ----------------------------------------------------
-  // Count positive / negative stocks
-  // ----------------------------------------------------
+  // ====================================================
+  // OVERALL SECTOR SCORE
+  // ====================================================
+  //
+  // Total contribution itself represents
+  // NIFTY weighted market movement.
+  //
+  // Example:
+  //
+  // +0.80 contribution
+  // = approximately +0.80% weighted effect
+  //
+  // ====================================================
 
-  const advancingStocks =
-    stockData.filter(
-      (stock) =>
-        stock.changePercent > 0
-    ).length;
-
-  const decliningStocks =
-    stockData.filter(
-      (stock) =>
-        stock.changePercent < 0
-    ).length;
-
-  const unchangedStocks =
-    stockData.filter(
-      (stock) =>
-        stock.changePercent === 0
-    ).length;
+  const overallSectorScore =
+    Number(
+      totalContribution.toFixed(2)
+    );
 
 
-  // ----------------------------------------------------
-  // Return final response
-  // ----------------------------------------------------
+  // ====================================================
+  // OVERALL PERFORMANCE
+  // ====================================================
+
+  const overallPerformance =
+    weightTotal > 0
+      ? (
+          totalContribution /
+          weightTotal
+        ) * 100
+      : 0;
+
+
+  // ====================================================
+  // STRONGEST SECTOR
+  // ====================================================
+
+  const strongestSector =
+    sectors.length > 0
+      ? sectors[0]
+      : null;
+
+
+  // ====================================================
+  // WEAKEST SECTOR
+  // ====================================================
+
+  const weakestSector =
+    sectors.length > 0
+      ? sectors[
+          sectors.length - 1
+        ]
+      : null;
+
+
+  // ====================================================
+  // DEBUG
+  // ====================================================
+
+  console.log(
+    "=========================================="
+  );
+
+  console.log(
+    "NIFTY 50 SECTOR ENGINE"
+  );
+
+  console.log(
+    "=========================================="
+  );
+
+  console.log(
+    "Stocks:",
+    stocks.length
+  );
+
+  console.log(
+    "Weight:",
+    weightTotal
+  );
+
+  console.log(
+    "Contribution:",
+    totalContribution
+  );
+
+  console.log(
+    "Overall Score:",
+    overallSectorScore
+  );
+
+  console.log(
+    "Strongest:",
+    strongestSector?.sector
+  );
+
+  console.log(
+    "Weakest:",
+    weakestSector?.sector
+  );
+
+  console.log(
+    "=========================================="
+  );
+
+
+  // ====================================================
+  // RETURN
+  // ====================================================
 
   return {
 
-    success: true,
+    success:
+      true,
 
-    timestamp:
-      new Date().toISOString(),
 
-    stockCount:
-      stockData.length,
+    // --------------------------------------------------
+    // NIFTY TOTALS
+    // --------------------------------------------------
 
-    configuredStockCount:
-      NIFTY50_STOCKS.length,
+    overallSectorScore,
+
+    totalContribution:
+      Number(
+        totalContribution.toFixed(4)
+      ),
 
     weightTotal:
+      Number(
+        weightTotal.toFixed(4)
+      ),
+
+    overallPerformance:
+      Number(
+        overallPerformance.toFixed(4)
+      ),
+
+
+    niftyWeightTotal:
       Number(
         NIFTY_INDEX_WEIGHT_TOTAL.toFixed(
           4
         )
       ),
 
-    totalContribution:
-      Number(
-        totalContribution.toFixed(
-          4
-        )
-      ),
 
-    overallSectorScore:
-      Number(
-        overallSectorScore.toFixed(
-          2
-        )
-      ),
+    // --------------------------------------------------
+    // STRONGEST / WEAKEST
+    // --------------------------------------------------
 
-    advancingStocks,
+    strongestSector,
 
-    decliningStocks,
+    weakestSector,
 
-    unchangedStocks,
 
-    stocks:
-      stockData,
+    // --------------------------------------------------
+    // SECTOR DATA
+    // --------------------------------------------------
 
     sectors,
+
+
+    // --------------------------------------------------
+    // ALL NIFTY 50 STOCKS
+    //
+    // THIS IS WHAT OUR NEW TABLE WILL USE
+    // --------------------------------------------------
+
+    stocks,
   };
 }
