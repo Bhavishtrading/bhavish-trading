@@ -690,9 +690,15 @@ export async function getNifty50SectorData() {
   // ====================================================
 
   const overallSectorScore =
-    Number(
-      totalContribution.toFixed(2)
-    );
+  Number(
+    sectors
+      .reduce(
+        (sum, sector) =>
+          sum + Number(sector.score || 0),
+        0
+      )
+      .toFixed(2)
+  );
 
 
   // ====================================================
