@@ -1,7 +1,9 @@
 
 import { NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
+
 import { captureOIBotSnapshot } from "@/services/oi-bot/snapshotEngine";
+import { captureOptionsChainSnapshot } from "@/services/oi-bot/optionsChainEngine";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -33,11 +35,28 @@ export async function GET(request) {
       );
     }
 
-    const result = await captureOIBotSnapshot();
+    // Capture Futures and Options snapshots independently
+    const [futuresResult, optionsResult] = await Promise.all([
+      captureOIBotSnapshot(),
+      captureOptionsChainSnapshot(),
+    ]);
 
-    return NextResponse.json(result, {
-      status: result.success ? 200 : 500,
+    const success =
+      futuresResult.success && optionsResult.success;
+
+    console.log("OI BOT CRON COLLECTION STATUS", {
+      futures: futuresResult.success,
+      options: optionsResult.success,
     });
+
+    return NextResponse.json(
+      {
+        success,
+        futures: futuresResult,
+        options: optionsResult,
+      },
+      { status: success ? 200 : 500 }
+    );
   } catch (error) {
     console.error("OI BOT CRON ERROR:", error.message);
 
