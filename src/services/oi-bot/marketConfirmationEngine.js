@@ -586,13 +586,23 @@ export async function getOIBotMarketConfirmation() {
 
     // 15. PRICE MOMENTUM
 
-    let momentum = "SIDEWAYS";
+const momentumChange = last.close - previous.close;
 
-    if (last.close > previous.close) {
-      momentum = "UP";
-    } else if (last.close < previous.close) {
-      momentum = "DOWN";
-    }
+let momentum = "SIDEWAYS";
+
+if (momentumChange > 0) {
+  momentum = "UP";
+} else if (momentumChange < 0) {
+  momentum = "DOWN";
+}
+
+const momentumDetails = {
+  latestCandleClose: Number(last.close.toFixed(2)),
+  previousCandleClose: Number(previous.close.toFixed(2)),
+  change: Number(momentumChange.toFixed(2)),
+  latestCandleTime: last.date,
+  previousCandleTime: previous.date,
+};
 
     // 16. MARKET BIAS
 
@@ -662,6 +672,7 @@ export async function getOIBotMarketConfirmation() {
       emaTrend,
 
       momentum,
+      momentumDetails,
       structure,
       volume,
       breakout,
