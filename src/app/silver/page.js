@@ -110,6 +110,8 @@ export default function SilverPage() {
 
   const adx =
     technical.adx || {};
+  const atr =
+  technical.atr || {};  
 
   const volume =
     technical.volume || {};
@@ -527,6 +529,47 @@ export default function SilverPage() {
             </div>
 
           </div>
+          {/* ================================================= */}
+{/* ATR */}
+{/* ================================================= */}
+
+<div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
+
+  <h2 className="text-gray-400 text-sm uppercase">
+    ATR 14
+  </h2>
+
+  <div className="mt-4 text-3xl font-bold text-cyan-400">
+    {atr.value != null
+      ? Number(atr.value).toFixed(2)
+      : "-"}
+  </div>
+
+  <div
+    className={`mt-3 font-bold ${
+      atr.trend === "Rising"
+        ? "text-orange-400"
+        : atr.trend === "Falling"
+        ? "text-blue-400"
+        : "text-yellow-400"
+    }`}
+  >
+    {atr.trend === "Rising"
+      ? "↑ Rising"
+      : atr.trend === "Falling"
+      ? "↓ Falling"
+      : "→ Neutral"}
+  </div>
+
+  <div className="mt-2 text-sm text-gray-400">
+    Period: 14
+  </div>
+
+  <div className="mt-1 text-xs text-gray-500">
+    Timeframe: {atr.timeframe || "5M"}
+  </div>
+
+</div>
 
 
           {/* ================================================= */}

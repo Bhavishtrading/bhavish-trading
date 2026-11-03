@@ -2,6 +2,7 @@
 import { Redis } from "@upstash/redis";
 import { getKiteClient } from "@/services/zerodha/client";
 import { getOIBotAccessToken } from "./tokenStore";
+import { getOIBotNFOInstruments } from "./instrumentCache";
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL,
@@ -23,21 +24,18 @@ function getTodayIST() {
 
 export async function captureOIBotSnapshot() {
   try {
-    // 1. Get server-side Zerodha token
     const accessToken = await getOIBotAccessToken();
 
     if (!accessToken) {
       throw new Error("OI BOT Zerodha token missing or expired. Login again.");
     }
 
-    // 2. Initialize Kite client
     const kite = getKiteClient();
     kite.setAccessToken(accessToken);
 
-    // 3. Fetch NFO instruments
-    const instruments = await kite.getInstruments(["NFO"]);
+    // Use shared cached NFO instruments
+    const instruments = await getOIBotNFOInstruments();
 
-    // 4. Find nearest active NIFTY Futures contract
     const todayIST = getTodayIST();
 
     const futures = instruments
@@ -56,7 +54,6 @@ export async function captureOIBotSnapshot() {
       throw new Error("Active NIFTY Futures contract not found");
     }
 
-    // 5. Fetch live quote
     const symbol = `NFO:${future.tradingsymbol}`;
     const quotes = await kite.getQuote([symbol]);
     const quote = quotes?.[symbol];
@@ -91,7 +88,6 @@ export async function captureOIBotSnapshot() {
       capturedAtISO: new Date(capturedAt).toISOString(),
     };
 
-    // 6. Save to OI BOT's separate Redis history
     await redis.rpush(HISTORY_KEY, JSON.stringify(snapshot));
     await redis.ltrim(HISTORY_KEY, -MAX_HISTORY, -1);
     await redis.expire(HISTORY_KEY, HISTORY_TTL);

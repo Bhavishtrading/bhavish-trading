@@ -7,6 +7,7 @@
 // RSI 14
 // ADX 14
 // +DI / -DI
+// ATR 14
 // VOLUME
 //
 // Price-aware EMA Structure
@@ -382,6 +383,77 @@ function calculateTrueRange(
   }
 
   return tr;
+}
+
+
+// =====================================================
+// ATR 14
+// =====================================================
+
+export function calculateATR(
+  candles,
+  period = 14
+) {
+
+  const length =
+    candles.length;
+
+  const tr =
+    calculateTrueRange(
+      candles
+    );
+
+  const atr =
+    new Array(
+      length
+    ).fill(null);
+
+  if (
+    length < period
+  ) {
+    return atr;
+  }
+
+  // First ATR = SMA of True Range
+
+  let sum = 0;
+
+  for (
+    let i = 0;
+    i < period;
+    i++
+  ) {
+
+    sum += tr[i];
+  }
+
+  let currentATR =
+    sum / period;
+
+  atr[period - 1] =
+    currentATR;
+
+  // Wilder smoothing
+
+  for (
+    let i = period;
+    i < length;
+    i++
+  ) {
+
+    currentATR =
+      (
+        currentATR *
+          (period - 1) +
+        tr[i]
+      ) /
+      period;
+
+    atr[i] =
+      currentATR;
+  }
+
+  return atr;
 }
 
 
@@ -958,6 +1030,16 @@ export function calculateSilverTechnicalIndicators(
     adxData.minusDI;
 
   // ---------------------------------------------------
+  // ATR 14
+  // ---------------------------------------------------
+
+  const atr =
+    calculateATR(
+      candles,
+      14
+    );
+
+  // ---------------------------------------------------
   // VOLUME
   // ---------------------------------------------------
 
@@ -1149,6 +1231,37 @@ export function calculateSilverTechnicalIndicators(
   }
 
   // ---------------------------------------------------
+  // ATR TREND
+  // ---------------------------------------------------
+
+  let atrTrend =
+    "Neutral";
+
+  if (
+    atr[lastIndex] !== null &&
+    lastIndex > 0 &&
+    atr[lastIndex - 1] !== null
+  ) {
+
+    if (
+      atr[lastIndex] >
+      atr[lastIndex - 1]
+    ) {
+
+      atrTrend =
+        "Rising";
+
+    } else if (
+      atr[lastIndex] <
+      atr[lastIndex - 1]
+    ) {
+
+      atrTrend =
+        "Falling";
+    }
+  }
+
+  // ---------------------------------------------------
   // FINAL RESULT
   // ---------------------------------------------------
 
@@ -1248,6 +1361,25 @@ export function calculateSilverTechnicalIndicators(
     },
 
     // -------------------------------------------------
+    // ATR
+    // -------------------------------------------------
+
+    atr: {
+
+      value:
+        atr[lastIndex],
+
+      period:
+        14,
+
+      trend:
+        atrTrend,
+
+      timeframe:
+        "5M",
+    },
+
+    // -------------------------------------------------
     // VOLUME
     // -------------------------------------------------
 
@@ -1298,6 +1430,9 @@ export function calculateSilverTechnicalIndicators(
 
       minusDI:
         minusDI,
+
+      atr14:
+        atr,
 
       volume:
         volumes,

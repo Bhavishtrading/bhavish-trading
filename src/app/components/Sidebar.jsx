@@ -1,3 +1,4 @@
+
 import Link from "next/link";
 
 export default function Sidebar() {
@@ -50,6 +51,23 @@ export default function Sidebar() {
         <div className="hover:bg-slate-800 p-3 rounded-lg cursor-pointer">
           📉 OI Analysis
         </div>
+
+        <Link
+          href="/oi-bot"
+          className="
+            block
+            bg-blue-600/15
+            border border-blue-500/30
+            text-blue-300
+            hover:bg-blue-600/25
+            p-3
+            rounded-lg
+            cursor-pointer
+            font-semibold
+          "
+        >
+          🤖 OI Direction BOT
+        </Link>
 
         <div className="hover:bg-slate-800 p-3 rounded-lg cursor-pointer">
           📋 PCR Analysis

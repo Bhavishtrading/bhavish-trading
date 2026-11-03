@@ -19,6 +19,7 @@ import MarketBiasCard from "./MarketBiasCard";
 import NiftyIntelligence from "./NiftyIntelligence";
 import BhavishScoreCard from "./BhavishScoreCard";
 import Nifty50LiveStocks from "./Nifty50LiveStocks";
+import VixIntelligenceCard from "./VixIntelligenceCard";
 
 export default function DashboardClient() {
   const [data, setData] = useState(null);
@@ -328,6 +329,13 @@ export default function DashboardClient() {
             />
 
           </div>
+          {/* ====================================== */}
+{/* BHAVISH VIX INTELLIGENCE */}
+{/* ====================================== */}
+
+<div className="mt-6 w-full min-w-0">
+  <VixIntelligenceCard />
+</div>
 
           {/* ===================================================== */}
           {/* NIFTY SECTOR INTELLIGENCE + INDICATORS */}

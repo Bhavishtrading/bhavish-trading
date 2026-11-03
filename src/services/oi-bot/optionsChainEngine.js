@@ -2,6 +2,7 @@
 import { Redis } from "@upstash/redis";
 import { getKiteClient } from "@/services/zerodha/client";
 import { getOIBotAccessToken } from "./tokenStore";
+import { getOIBotNFOInstruments } from "./instrumentCache";
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL,
@@ -46,8 +47,8 @@ export async function captureOptionsChainSnapshot() {
       throw new Error("NIFTY spot price unavailable");
     }
 
-    // 2. Get NFO instruments
-    const instruments = await kite.getInstruments(["NFO"]);
+    // 2. Get cached NFO instruments
+    const instruments = await getOIBotNFOInstruments();
     const todayIST = getTodayIST();
 
     // 3. Find nearest NIFTY options expiry
