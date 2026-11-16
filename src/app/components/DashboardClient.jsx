@@ -1,3 +1,4 @@
+
 "use client";
 
 import AISignalCard from "./AISignalCard";
@@ -20,6 +21,8 @@ import NiftyIntelligence from "./NiftyIntelligence";
 import BhavishScoreCard from "./BhavishScoreCard";
 import Nifty50LiveStocks from "./Nifty50LiveStocks";
 import VixIntelligenceCard from "./VixIntelligenceCard";
+import NiftySpotChart from "@/components/charts/NiftySpotChart";
+import NiftyFutureIntelligence from "./NiftyFutureIntelligence";
 
 export default function DashboardClient() {
   const [data, setData] = useState(null);
@@ -329,13 +332,28 @@ export default function DashboardClient() {
             />
 
           </div>
+
           {/* ====================================== */}
-{/* BHAVISH VIX INTELLIGENCE */}
+{/* NIFTY FUTURES INTELLIGENCE */}
 {/* ====================================== */}
 
-<div className="mt-6 w-full min-w-0">
-  <VixIntelligenceCard />
-</div>
+<NiftyFutureIntelligence />
+
+          {/* ====================================== */}
+          {/* BHAVISH VIX INTELLIGENCE */}
+          {/* ====================================== */}
+
+          <div className="mt-6 w-full min-w-0">
+            <VixIntelligenceCard />
+          </div>
+
+          {/* ====================================== */}
+          {/* NIFTY 50 CANDLESTICK CHART */}
+          {/* ====================================== */}
+
+          <div className="mt-6 w-full min-w-0">
+            <NiftySpotChart />
+          </div>
 
           {/* ===================================================== */}
           {/* NIFTY SECTOR INTELLIGENCE + INDICATORS */}
@@ -349,9 +367,7 @@ export default function DashboardClient() {
 
             <div className="lg:col-span-2 bg-slate-800 border border-slate-700 rounded-xl p-5 md:p-6 shadow-lg hover:border-cyan-500 transition-all duration-300">
 
-              {/* =============================================== */}
               {/* HEADER */}
-              {/* =============================================== */}
 
               <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
 
@@ -393,9 +409,7 @@ export default function DashboardClient() {
 
               </div>
 
-              {/* =============================================== */}
               {/* SUMMARY */}
-              {/* =============================================== */}
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5">
 
@@ -417,9 +431,7 @@ export default function DashboardClient() {
                     }`}
                   >
                     {sectorData
-                      ? `${sectorPerformance.toFixed(
-                          2
-                        )}%`
+                      ? `${sectorPerformance.toFixed(2)}%`
                       : "-"}
                   </p>
 
@@ -435,9 +447,7 @@ export default function DashboardClient() {
 
                   <p className="text-lg font-bold mt-1 text-cyan-400">
                     {sectorData
-                      ? `${weightTotal.toFixed(
-                          2
-                        )}%`
+                      ? `${weightTotal.toFixed(2)}%`
                       : "-"}
                   </p>
 
@@ -460,8 +470,7 @@ export default function DashboardClient() {
                   {strongestSector && (
                     <p className="text-xs text-green-400">
                       {Number(
-                        strongestSector.performance ??
-                          0
+                        strongestSector.performance ?? 0
                       ).toFixed(2)}
                       %
                     </p>
@@ -486,8 +495,7 @@ export default function DashboardClient() {
                   {weakestSector && (
                     <p className="text-xs text-red-400">
                       {Number(
-                        weakestSector.performance ??
-                          0
+                        weakestSector.performance ?? 0
                       ).toFixed(2)}
                       %
                     </p>
@@ -497,9 +505,7 @@ export default function DashboardClient() {
 
               </div>
 
-              {/* =============================================== */}
               {/* SECTOR STOCKS */}
-              {/* =============================================== */}
 
               <div className="mt-5">
 
@@ -523,9 +529,7 @@ export default function DashboardClient() {
 
                 </div>
 
-                {/* ============================================= */}
                 {/* SECTOR LIST */}
-                {/* ============================================= */}
 
                 <div className="space-y-2">
 
@@ -552,9 +556,7 @@ export default function DashboardClient() {
                           className="rounded-lg border border-slate-700 bg-slate-900 overflow-hidden"
                         >
 
-                          {/* ================================= */}
                           {/* SECTOR ROW */}
-                          {/* ================================= */}
 
                           <button
                             type="button"
@@ -596,8 +598,7 @@ export default function DashboardClient() {
                                   >
                                     Score{" "}
                                     {Number(
-                                      sector.score ??
-                                        0
+                                      sector.score ?? 0
                                     ).toFixed(2)}
                                   </span>
 
@@ -607,8 +608,7 @@ export default function DashboardClient() {
                                     )}`}
                                   >
                                     {Number(
-                                      sector.performance ??
-                                        0
+                                      sector.performance ?? 0
                                     ).toFixed(2)}
                                     %
                                   </span>
@@ -636,8 +636,7 @@ export default function DashboardClient() {
 
                                 <p className="text-xs text-cyan-400 font-semibold">
                                   {Number(
-                                    sector.sectorWeight ??
-                                      0
+                                    sector.sectorWeight ?? 0
                                   ).toFixed(2)}
                                   %
                                 </p>
@@ -658,9 +657,7 @@ export default function DashboardClient() {
 
                           </button>
 
-                          {/* ================================= */}
                           {/* EXPANDED STOCKS */}
-                          {/* ================================= */}
 
                           {isExpanded && (
                             <div className="border-t border-slate-700 bg-slate-950/70 p-3">
@@ -681,8 +678,7 @@ export default function DashboardClient() {
 
                                       const change =
                                         Number(
-                                          stock.changePercent ??
-                                            0
+                                          stock.changePercent ?? 0
                                         );
 
                                       return (
@@ -732,8 +728,7 @@ export default function DashboardClient() {
                                               <p className="text-xs text-white font-semibold">
                                                 ₹
                                                 {Number(
-                                                  stock.ltp ??
-                                                    0
+                                                  stock.ltp ?? 0
                                                 ).toLocaleString(
                                                   "en-IN",
                                                   {
@@ -747,13 +742,10 @@ export default function DashboardClient() {
                                                   change
                                                 )}`}
                                               >
-                                                {change >
-                                                0
+                                                {change > 0
                                                   ? "+"
                                                   : ""}
-                                                {change.toFixed(
-                                                  2
-                                                )}
+                                                {change.toFixed(2)}
                                                 %
                                               </p>
 
@@ -771,11 +763,8 @@ export default function DashboardClient() {
 
                                             <span className="text-[10px] text-slate-400">
                                               {Number(
-                                                stock.weight ??
-                                                  0
-                                              ).toFixed(
-                                                2
-                                              )}
+                                                stock.weight ?? 0
+                                              ).toFixed(2)}
                                               %
                                             </span>
 
@@ -789,11 +778,8 @@ export default function DashboardClient() {
                                               )}`}
                                             >
                                               {Number(
-                                                stock.weightedContribution ??
-                                                  0
-                                              ).toFixed(
-                                                4
-                                              )}
+                                                stock.weightedContribution ?? 0
+                                              ).toFixed(4)}
                                             </span>
 
                                           </div>
@@ -826,17 +812,13 @@ export default function DashboardClient() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4 md:gap-6">
 
-              {/* ============================================= */}
               {/* RSI */}
-              {/* ============================================= */}
 
               <RSICard
                 rsi={data.rsi}
               />
 
-              {/* ============================================= */}
               {/* MACD */}
-              {/* ============================================= */}
 
               <MACDCard
                 macd={
@@ -845,9 +827,7 @@ export default function DashboardClient() {
                 }
               />
 
-              {/* ============================================= */}
               {/* PCR */}
-              {/* ============================================= */}
 
               <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-lg hover:border-green-500 transition-all duration-300">
 
@@ -954,33 +934,25 @@ export default function DashboardClient() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mt-6">
 
-            {/* ==================================== */}
             {/* ATR */}
-            {/* ==================================== */}
 
             <ATRCard
               atr={data.atr}
             />
 
-            {/* ==================================== */}
             {/* VWAP */}
-            {/* ==================================== */}
 
             <VWAPCard
               vwap={data.vwap}
             />
 
-            {/* ==================================== */}
             {/* ADX */}
-            {/* ==================================== */}
 
             <ADXCard
               adx={data.adx}
             />
 
-            {/* ==================================== */}
             {/* MARKET STRENGTH */}
-            {/* ==================================== */}
 
             <DashboardCard
               title="Market Strength"
@@ -1027,15 +999,16 @@ export default function DashboardClient() {
             />
 
           </div>
+
           {/* ====================================== */}
-{/* NIFTY 50 LIVE STOCKS */}
-{/* ====================================== */}
+          {/* NIFTY 50 LIVE STOCKS */}
+          {/* ====================================== */}
 
-<div className="mt-6 w-full min-w-0">
+          <div className="mt-6 w-full min-w-0">
 
-  <Nifty50LiveStocks />
+            <Nifty50LiveStocks />
 
-</div>
+          </div>
 
           {/* ====================================== */}
           {/* LIVE OPTION CHAIN */}

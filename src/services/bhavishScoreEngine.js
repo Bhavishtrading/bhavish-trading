@@ -762,8 +762,6 @@ score += factors.macd;
   }
 
   score += factors.volume;
-
-
   // ======================================================
   // FINAL SCORE
   // ======================================================
@@ -773,29 +771,80 @@ score += factors.macd;
     Math.min(100, score)
   );
 
+  // ------------------------------------------------------
+  // ENTRY SAFETY FILTERS
+  // ------------------------------------------------------
+
+  const bullishEMA = factors.emaStructure > 0;
+  const bearishEMA = factors.emaStructure < 0;
+
+  const bullishVolume = factors.volume > 0;
+  const bearishVolume = factors.volume < 0;
+
+  const macdNotBearish = factors.macd >= 0;
+  const macdNotBullish = factors.macd <= 0;
+
+  const adxNotBearish = factors.adx >= 0;
+  const adxNotBullish = factors.adx <= 0;
+
+  const bullishSafeguardsPassed =
+    bullishEMA &&
+    bullishVolume &&
+    macdNotBearish &&
+    adxNotBearish;
+
+  const bearishSafeguardsPassed =
+    bearishEMA &&
+    bearishVolume &&
+    macdNotBullish &&
+    adxNotBullish;
+
+  // ------------------------------------------------------
+  // FINAL ACTION
+  // ------------------------------------------------------
+
   let state = "NEUTRAL";
-  let action = "NO TRADE";
+  let action = "WAIT";
 
-  if (score >= 80) {
-    state = "STRONG BULLISH";
-    action = "CE SIDE";
+  if (score >= 60) {
+    state = "BULLISH";
+
+    if (bullishSafeguardsPassed) {
+      action = "BUY CE";
+      reasons.push(
+        "BUY CE approved: Score and bullish safety filters passed"
+      );
+    } else {
+      action = "WAIT";
+      reasons.push(
+        "BUY CE blocked: EMA / Volume / Momentum confirmation incomplete"
+      );
+    }
   }
 
-  else if (score <= -80) {
-    state = "STRONG BEARISH";
-    action = "PE SIDE";
+  else if (score <= -60) {
+    state = "BEARISH";
+
+    if (bearishSafeguardsPassed) {
+      action = "BUY PE";
+      reasons.push(
+        "BUY PE approved: Score and bearish safety filters passed"
+      );
+    } else {
+      action = "WAIT";
+      reasons.push(
+        "BUY PE blocked: EMA / Volume / Momentum confirmation incomplete"
+      );
+    }
   }
 
-
-  // ======================================================
+  // ------------------------------------------------------
   // RETURN
-  // ======================================================
+  // ------------------------------------------------------
 
   return {
     score,
-
     state,
-
     action,
 
     timeframe: {
@@ -814,10 +863,23 @@ score += factors.macd;
     minScore: -100,
 
     tradeFilter: {
-      bullishFrom: 80,
-      bearishFrom: -80,
-      noTradeFrom: -79,
-      noTradeTo: 79,
+      bullishFrom: 60,
+      bearishFrom: -60,
+      noTradeFrom: -59,
+      noTradeTo: 59,
+    },
+
+    safetyChecks: {
+      bullishEMA,
+      bearishEMA,
+      bullishVolume,
+      bearishVolume,
+      macdNotBearish,
+      macdNotBullish,
+      adxNotBearish,
+      adxNotBullish,
+      bullishSafeguardsPassed,
+      bearishSafeguardsPassed,
     },
 
     reasons,

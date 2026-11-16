@@ -1,24 +1,42 @@
+
 export function calculateADX(quotes, period = 14) {
-  if (!quotes || quotes.length < period + 1) {
+  if (!Array.isArray(quotes) || quotes.length < period * 2) {
     return null;
   }
 
-  let trSum = 0;
-  let plusDMSum = 0;
-  let minusDMSum = 0;
+  const candles = quotes.map((q) => ({
+    high: Number(q.high),
+    low: Number(q.low),
+    close: Number(q.close),
+  }));
 
-  for (let i = 1; i < quotes.length; i++) {
-    const current = quotes[i];
-    const previous = quotes[i - 1];
+  if (
+    candles.some(
+      (c) =>
+        !Number.isFinite(c.high) ||
+        !Number.isFinite(c.low) ||
+        !Number.isFinite(c.close)
+    )
+  ) {
+    return null;
+  }
 
-    const highDiff = current.high - previous.high;
-    const lowDiff = previous.low - current.low;
+  const trValues = [];
+  const plusDMValues = [];
+  const minusDMValues = [];
+
+  for (let i = 1; i < candles.length; i++) {
+    const current = candles[i];
+    const previous = candles[i - 1];
+
+    const upMove = current.high - previous.high;
+    const downMove = previous.low - current.low;
 
     const plusDM =
-      highDiff > lowDiff && highDiff > 0 ? highDiff : 0;
+      upMove > downMove && upMove > 0 ? upMove : 0;
 
     const minusDM =
-      lowDiff > highDiff && lowDiff > 0 ? lowDiff : 0;
+      downMove > upMove && downMove > 0 ? downMove : 0;
 
     const tr = Math.max(
       current.high - current.low,
@@ -26,38 +44,101 @@ export function calculateADX(quotes, period = 14) {
       Math.abs(current.low - previous.close)
     );
 
-    trSum += tr;
-    plusDMSum += plusDM;
-    minusDMSum += minusDM;
+    trValues.push(tr);
+    plusDMValues.push(plusDM);
+    minusDMValues.push(minusDM);
   }
 
-  if (trSum === 0) {
-    return {
-      adx: 0,
-      plusDI: 0,
-      minusDI: 0,
-      trend: "Sideways",
-    };
+  // Initial Wilder sums
+  let smoothedTR = trValues
+    .slice(0, period)
+    .reduce((sum, value) => sum + value, 0);
+
+  let smoothedPlusDM = plusDMValues
+    .slice(0, period)
+    .reduce((sum, value) => sum + value, 0);
+
+  let smoothedMinusDM = minusDMValues
+    .slice(0, period)
+    .reduce((sum, value) => sum + value, 0);
+
+  const dxValues = [];
+
+  function calculateDX() {
+    if (smoothedTR <= 0) return 0;
+
+    const plusDI = (smoothedPlusDM / smoothedTR) * 100;
+    const minusDI = (smoothedMinusDM / smoothedTR) * 100;
+
+    const denominator = plusDI + minusDI;
+
+    if (denominator === 0) return 0;
+
+    return (
+      (Math.abs(plusDI - minusDI) / denominator) * 100
+    );
   }
 
-  const plusDI = Number(((plusDMSum / trSum) * 100).toFixed(2));
-  const minusDI = Number(((minusDMSum / trSum) * 100).toFixed(2));
+  dxValues.push(calculateDX());
 
-  const dx =
-    ((Math.abs(plusDI - minusDI) / (plusDI + minusDI || 1)) * 100);
+  // Wilder smoothing
+  for (let i = period; i < trValues.length; i++) {
+    smoothedTR =
+      smoothedTR - smoothedTR / period + trValues[i];
 
-  const adx = Number(dx.toFixed(2));
+    smoothedPlusDM =
+      smoothedPlusDM -
+      smoothedPlusDM / period +
+      plusDMValues[i];
+
+    smoothedMinusDM =
+      smoothedMinusDM -
+      smoothedMinusDM / period +
+      minusDMValues[i];
+
+    dxValues.push(calculateDX());
+  }
+
+  // Initial ADX = average of first period DX values
+  if (dxValues.length < period) return null;
+
+  let adx =
+    dxValues.slice(0, period).reduce(
+      (sum, value) => sum + value,
+      0
+    ) / period;
+
+  // Wilder ADX smoothing
+  for (let i = period; i < dxValues.length; i++) {
+    adx = ((adx * (period - 1)) + dxValues[i]) / period;
+  }
+
+  const plusDI =
+    smoothedTR > 0
+      ? (smoothedPlusDM / smoothedTR) * 100
+      : 0;
+
+  const minusDI =
+    smoothedTR > 0
+      ? (smoothedMinusDM / smoothedTR) * 100
+      : 0;
 
   let trend = "Sideways";
 
   if (adx >= 25) {
-    trend = plusDI > minusDI ? "Bullish" : "Bearish";
+    if (plusDI > minusDI) {
+      trend = "Bullish";
+    } else if (minusDI > plusDI) {
+      trend = "Bearish";
+    }
   }
 
   return {
-    adx,
-    plusDI,
-    minusDI,
+    adx: Number(adx.toFixed(2)),
+    plusDI: Number(plusDI.toFixed(2)),
+    minusDI: Number(minusDI.toFixed(2)),
     trend,
+    period,
+    method: "Wilder",
   };
 }

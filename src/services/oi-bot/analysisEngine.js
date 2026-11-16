@@ -156,15 +156,29 @@ function getOptionsAnalysis(current, previous) {
       } else if (oiChange < 0 && premiumChange < 0) {
         interpretation = "LONG_UNWINDING_CANDIDATE";
       }
-
-      return {
+            return {
         strike: Number(option.strike),
         optionType: option.optionType,
         tradingsymbol: option.tradingsymbol,
+
+        currentOI,
+        previousOI,
+
         oiChange,
+
+        oiChangePercent: Number(
+          ((oiChange / previousOI) * 100).toFixed(3)
+        ),
+
+        currentPremium,
+        previousPremium,
+
         premiumChange: Number(premiumChange.toFixed(2)),
+
         interpretation,
       };
+
+
     })
     .filter(Boolean);
 

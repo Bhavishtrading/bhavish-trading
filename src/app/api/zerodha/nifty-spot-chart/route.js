@@ -4,6 +4,7 @@ import { getNiftyHistoricalData } from "@/services/zerodha/market";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 const ALLOWED_INTERVALS = [
   "minute",
@@ -17,9 +18,10 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
 
     const interval = searchParams.get("interval") || "5minute";
+
     const days = Math.min(
-      Math.max(Number(searchParams.get("days")) || 5, 1),
-      30
+      Math.max(Number(searchParams.get("days")) || 730, 1),
+      730
     );
 
     if (!ALLOWED_INTERVALS.includes(interval)) {
@@ -39,6 +41,8 @@ export async function GET(request) {
       instrument: result.tradingsymbol,
       instrumentToken: result.instrumentToken,
       interval: result.interval,
+      requestedDays: days,
+      candleCount: result.candles.length,
       candles: result.candles,
     });
   } catch (error) {

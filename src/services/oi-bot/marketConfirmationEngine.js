@@ -514,11 +514,11 @@ export async function getOIBotMarketConfirmation() {
       (candle) => getISTDate(candle.date) === sessionDate
     );
 
-    if (sessionCandles.length < 20) {
-      throw new Error(
-        `Insufficient completed session candles: ${sessionCandles.length}`
-      );
-    }
+   if (sessionCandles.length < 2) {
+  throw new Error(
+    `Insufficient completed session candles: ${sessionCandles.length}`
+  );
+}
 
     // 7. EMA - COMPLETED HISTORICAL CANDLES
 

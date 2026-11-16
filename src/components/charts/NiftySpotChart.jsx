@@ -16,6 +16,8 @@ import {
   ColorType,
 } from "lightweight-charts";
 
+import { calculateSupertrend } from "@/services/indicators/supertrend";
+
 // ============================================
 // TIMEFRAMES
 // ============================================
@@ -27,13 +29,22 @@ const TIMEFRAMES = [
   { label: "15m", value: "15minute", seconds: 900 },
 ];
 
+// ============================================
+// INDICATORS AND COLOURS
+// ============================================
+
 const INDICATORS = [
-  { id: "ema9", label: "EMA 9", color: "#22D3EE" },
-  { id: "ema20", label: "EMA 20", color: "#F59E0B" },
-  { id: "ema50", label: "EMA 50", color: "#A78BFA" },
-  { id: "ema200", label: "EMA 200", color: "#F43F5E" },
-  { id: "ica", label: "ICA", color: "#34D399" },
-  { id: "vwap", label: "VWAP", color: "#E879F9" },
+  { id: "ema9", label: "EMA 9", color: "#FACC15" },
+  { id: "ema20", label: "EMA 20", color: "#111827" },
+  { id: "ema50", label: "EMA 50", color: "#8B5CF6" },
+  { id: "ema200", label: "EMA 200", color: "#EF4444" },
+  { id: "ica", label: "ICA", color: "#16A34A" },
+  { id: "vwap", label: "VWAP", color: "#D946EF" },
+  {
+    id: "supertrend",
+    label: "Supertrend (10, 3)",
+    color: "#16A34A",
+  },
 ];
 
 const DEFAULT_INDICATORS = [
@@ -43,6 +54,13 @@ const DEFAULT_INDICATORS = [
   "ica",
   "vwap",
 ];
+
+const SUPERTREND_PERIOD = 10;
+const SUPERTREND_MULTIPLIER = 3;
+
+// Shading transparency
+const BULLISH_FILL = "rgba(22, 163, 74, 0.12)";
+const BEARISH_FILL = "rgba(220, 38, 38, 0.12)";
 
 // ============================================
 // IST HELPERS
@@ -89,6 +107,41 @@ function formatISTTime(time) {
       hour12: false,
     }
   );
+}
+
+// ============================================
+// DATE LABELS
+// ============================================
+
+function formatISTAxisLabel(time, tickMarkType) {
+  if (typeof time !== "number") return "";
+
+  const date = new Date(
+    time * 1000 + IST_OFFSET_SECONDS * 1000
+  );
+
+  const year = date.getUTCFullYear();
+
+  const month = date.toLocaleString("en-IN", {
+    month: "short",
+    timeZone: "UTC",
+  });
+
+  const day = String(date.getUTCDate()).padStart(2, "0");
+
+  if (tickMarkType === 0) return String(year);
+
+  if (tickMarkType === 1) {
+    return `${month} ${year}`;
+  }
+
+  if (tickMarkType === 2) {
+    return `${day} ${month}`;
+  }
+
+  return `${String(date.getUTCHours()).padStart(2, "0")}:${String(
+    date.getUTCMinutes()
+  ).padStart(2, "0")}`;
 }
 
 // ============================================
@@ -172,9 +225,7 @@ function calculateICA5Minute(candles) {
   const result = [];
 
   const nowSeconds = Math.floor(Date.now() / 1000);
-
   const currentDateKey = getISTDateKey(nowSeconds);
-
   const currentMinute = getISTMinuteOfDay(nowSeconds);
 
   const currentFiveMinuteBucket =
@@ -184,18 +235,9 @@ function calculateICA5Minute(candles) {
     const dateKey = getISTDateKey(candle.time);
     const minuteOfDay = getISTMinuteOfDay(candle.time);
 
-    // Session starts at 09:15 IST
-    // Session ends at 15:30 IST
-
-    if (
-      minuteOfDay < 555 ||
-      minuteOfDay >= 930
-    ) {
+    if (minuteOfDay < 555 || minuteOfDay >= 930) {
       continue;
     }
-
-    // Do not include today's unfinished 5-minute candle.
-    // Previous trading days are already completed.
 
     if (dateKey === currentDateKey) {
       if (minuteOfDay >= currentFiveMinuteBucket) {
@@ -306,7 +348,7 @@ function aggregateLiveCandles(liveCandles, seconds) {
 }
 
 // ============================================
-// MERGE CANDLES
+// MERGE HISTORICAL + LIVE CANDLES
 // ============================================
 
 function mergeCandles(historical, live) {
@@ -326,13 +368,117 @@ function mergeCandles(historical, live) {
 }
 
 // ============================================
+// SUPERTREND SHADING DRAWER
+// ============================================
+
+function drawSupertrendShading({
+  canvas,
+  chart,
+  candleSeries,
+  candles,
+  supertrendData,
+}) {
+  if (!canvas || !chart || !candleSeries) return;
+
+  const context = canvas.getContext("2d");
+  if (!context) return;
+
+  const rect = canvas.getBoundingClientRect();
+
+  if (!rect.width || !rect.height) return;
+
+  const dpr = window.devicePixelRatio || 1;
+
+  canvas.width = Math.round(rect.width * dpr);
+  canvas.height = Math.round(rect.height * dpr);
+
+  context.setTransform(dpr, 0, 0, dpr, 0, 0);
+  context.clearRect(0, 0, rect.width, rect.height);
+
+  if (!candles.length || !supertrendData.length) return;
+
+  const candleMap = new Map(
+    candles.map((candle) => [candle.time, candle])
+  );
+
+  const points = supertrendData.map((item) => {
+    const candle = candleMap.get(item.time);
+
+    if (!candle) return null;
+
+    const x = chart.timeScale().timeToCoordinate(item.time);
+
+    const candleY = candleSeries.priceToCoordinate(
+      candle.close
+    );
+
+    const trendY = candleSeries.priceToCoordinate(
+      item.value
+    );
+
+    if (
+      x === null ||
+      candleY === null ||
+      trendY === null ||
+      !Number.isFinite(x) ||
+      !Number.isFinite(candleY) ||
+      !Number.isFinite(trendY)
+    ) {
+      return null;
+    }
+
+    return {
+      x,
+      candleY,
+      trendY,
+      trend: item.trend,
+    };
+  });
+
+  context.save();
+
+  for (let i = 1; i < points.length; i++) {
+    const previous = points[i - 1];
+    const current = points[i];
+
+    if (!previous || !current) continue;
+
+    // Do not shade across a trend reversal.
+    if (previous.trend !== current.trend) continue;
+
+    const isBullish = current.trend === 1;
+
+    context.beginPath();
+
+    context.moveTo(previous.x, previous.candleY);
+    context.lineTo(current.x, current.candleY);
+    context.lineTo(current.x, current.trendY);
+    context.lineTo(previous.x, previous.trendY);
+
+    context.closePath();
+
+    context.fillStyle = isBullish
+      ? BULLISH_FILL
+      : BEARISH_FILL;
+
+    context.fill();
+  }
+
+  context.restore();
+}
+
+// ============================================
 // MAIN COMPONENT
 // ============================================
 
 export default function NiftySpotChart() {
   const chartContainerRef = useRef(null);
+  const chartWrapperRef = useRef(null);
+  const shadingCanvasRef = useRef(null);
+
   const chartRef = useRef(null);
   const seriesRef = useRef({});
+  const lastFittedTimeframeRef = useRef(null);
 
   const [timeframe, setTimeframe] = useState("5minute");
 
@@ -365,7 +511,7 @@ export default function NiftySpotChart() {
       setError("");
 
       const response = await fetch(
-        `/api/zerodha/nifty-spot-chart?interval=${timeframe}&days=5`,
+        `/api/zerodha/nifty-spot-chart?interval=${timeframe}&days=730`,
         { cache: "no-store" }
       );
 
@@ -413,7 +559,7 @@ export default function NiftySpotChart() {
     async function loadICAHistory() {
       try {
         const response = await fetch(
-          "/api/zerodha/nifty-spot-chart?interval=5minute&days=5",
+          "/api/zerodha/nifty-spot-chart?interval=5minute&days=730",
           { cache: "no-store" }
         );
 
@@ -540,7 +686,7 @@ export default function NiftySpotChart() {
   }, []);
 
   // ============================================
-  // CREATE CHART
+  // CREATE WHITE CHART
   // ============================================
 
   useEffect(() => {
@@ -554,15 +700,15 @@ export default function NiftySpotChart() {
         layout: {
           background: {
             type: ColorType.Solid,
-            color: "#111C2B",
+            color: "#FFFFFF",
           },
-          textColor: "#94A3B8",
+          textColor: "#334155",
           fontFamily: "Geist, Arial, sans-serif",
         },
 
         grid: {
-          vertLines: { color: "#1E293B" },
-          horzLines: { color: "#1E293B" },
+          vertLines: { color: "#E5E7EB" },
+          horzLines: { color: "#E5E7EB" },
         },
 
         crosshair: {
@@ -570,15 +716,15 @@ export default function NiftySpotChart() {
         },
 
         rightPriceScale: {
-          borderColor: "#334155",
+          borderColor: "#CBD5E1",
         },
 
         timeScale: {
-          borderColor: "#334155",
+          borderColor: "#CBD5E1",
           timeVisible: true,
           secondsVisible: false,
-          tickMarkFormatter: (time) =>
-            formatISTTime(time),
+          tickMarkFormatter: (time, tickMarkType) =>
+            formatISTAxisLabel(time, tickMarkType),
         },
 
         localization: {
@@ -591,58 +737,83 @@ export default function NiftySpotChart() {
 
     chartRef.current = chart;
 
+    // CANDLESTICKS
+
     const candleSeries = chart.addSeries(
       CandlestickSeries,
       {
-        upColor: "#22C55E",
-        downColor: "#F43F5E",
-        borderUpColor: "#22C55E",
-        borderDownColor: "#F43F5E",
-        wickUpColor: "#22C55E",
-        wickDownColor: "#F43F5E",
+        upColor: "#16A34A",
+        downColor: "#DC2626",
+        borderUpColor: "#16A34A",
+        borderDownColor: "#DC2626",
+        wickUpColor: "#16A34A",
+        wickDownColor: "#DC2626",
       }
     );
 
+    // EMA 9
+
     const ema9 = chart.addSeries(LineSeries, {
-      color: "#22D3EE",
+      color: "#FACC15",
       lineWidth: 2,
       title: "EMA 9",
       priceLineVisible: false,
     });
 
+    // EMA 20
+
     const ema20 = chart.addSeries(LineSeries, {
-      color: "#F59E0B",
+      color: "#111827",
       lineWidth: 2,
       title: "EMA 20",
       priceLineVisible: false,
     });
 
+    // EMA 50
+
     const ema50 = chart.addSeries(LineSeries, {
-      color: "#A78BFA",
+      color: "#8B5CF6",
       lineWidth: 2,
       title: "EMA 50",
       priceLineVisible: false,
     });
 
+    // EMA 200
+
     const ema200 = chart.addSeries(LineSeries, {
-      color: "#F43F5E",
+      color: "#EF4444",
       lineWidth: 2,
       title: "EMA 200",
       priceLineVisible: false,
     });
 
+    // ICA
+
     const ica = chart.addSeries(LineSeries, {
-      color: "#34D399",
+      color: "#16A34A",
       lineWidth: 2,
       title: "ICA",
       priceLineVisible: false,
     });
 
+    // VWAP
+
     const vwap = chart.addSeries(LineSeries, {
-      color: "#E879F9",
+      color: "#D946EF",
       lineWidth: 2,
       title: "VWAP",
       priceLineVisible: false,
+    });
+
+    // SINGLE SUPERTREND LINE
+
+    const supertrendSeries = chart.addSeries(LineSeries, {
+      color: "#16A34A",
+      lineWidth: 2,
+      title: "Supertrend (10, 3)",
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: false,
     });
 
     seriesRef.current = {
@@ -653,6 +824,7 @@ export default function NiftySpotChart() {
       ema200,
       ica,
       vwap,
+      supertrendSeries,
     };
 
     setChartReady(true);
@@ -698,7 +870,6 @@ export default function NiftySpotChart() {
 
   // ============================================
   // ICA DISPLAY DATA
-  // ICA always uses 5-minute candles
   // ============================================
 
   const icaData = useMemo(() => {
@@ -732,6 +903,20 @@ export default function NiftySpotChart() {
   }, [icaCandles, liveStatus]);
 
   // ============================================
+  // SUPERTREND DATA
+  // ============================================
+
+  const supertrendData = useMemo(() => {
+    if (!displayCandles.length) return [];
+
+    return calculateSupertrend(
+      displayCandles,
+      SUPERTREND_PERIOD,
+      SUPERTREND_MULTIPLIER
+    );
+  }, [displayCandles]);
+
+  // ============================================
   // UPDATE CHART SERIES
   // ============================================
 
@@ -748,6 +933,14 @@ export default function NiftySpotChart() {
 
     series.candleSeries.setData(displayCandles);
 
+    if (
+      chartRef.current &&
+      lastFittedTimeframeRef.current !== timeframe
+    ) {
+      chartRef.current.timeScale().fitContent();
+      lastFittedTimeframeRef.current = timeframe;
+    }
+
     const indicatorData = {
       ema9: calculateEMA(displayCandles, 9),
       ema20: calculateEMA(displayCandles, 20),
@@ -757,7 +950,9 @@ export default function NiftySpotChart() {
       vwap: calculateVWAP(displayCandles),
     };
 
-    INDICATORS.forEach((indicator) => {
+    INDICATORS.filter(
+      (indicator) => indicator.id !== "supertrend"
+    ).forEach((indicator) => {
       const targetSeries = series[indicator.id];
 
       if (!targetSeries) return;
@@ -770,11 +965,91 @@ export default function NiftySpotChart() {
         targetSeries.setData([]);
       }
     });
+
+    // Supertrend line with dynamic colour
+
+    if (selectedIndicators.includes("supertrend")) {
+      const coloredSupertrendData = supertrendData.map(
+        (item) => ({
+          time: item.time,
+          value: item.value,
+          color:
+            item.trend === 1
+              ? "#16A34A"
+              : "#DC2626",
+        })
+      );
+
+      series.supertrendSeries.setData(
+        coloredSupertrendData
+      );
+    } else {
+      series.supertrendSeries.setData([]);
+    }
   }, [
     chartReady,
     displayCandles,
     selectedIndicators,
     icaData,
+    timeframe,
+    supertrendData,
+  ]);
+
+  // ============================================
+  // DRAW SUPERTREND FILL
+  // ============================================
+
+  useEffect(() => {
+    const canvas = shadingCanvasRef.current;
+    const chart = chartRef.current;
+    const candleSeries = seriesRef.current.candleSeries;
+
+    if (!canvas || !chart || !candleSeries) return;
+
+    let resizeObserver;
+
+    const draw = () => {
+      if (!selectedIndicators.includes("supertrend")) {
+        const context = canvas.getContext("2d");
+        context?.clearRect(
+          0,
+          0,
+          canvas.width,
+          canvas.height
+        );
+        return;
+      }
+
+      drawSupertrendShading({
+        canvas,
+        chart,
+        candleSeries,
+        candles: displayCandles,
+        supertrendData,
+      });
+    };
+
+    draw();
+
+    const timeScale = chart.timeScale();
+
+    timeScale.subscribeVisibleLogicalRangeChange(draw);
+
+    resizeObserver = new ResizeObserver(draw);
+
+    if (chartWrapperRef.current) {
+      resizeObserver.observe(chartWrapperRef.current);
+    }
+
+    return () => {
+      timeScale.unsubscribeVisibleLogicalRangeChange(draw);
+      resizeObserver?.disconnect();
+    };
+  }, [
+    chartReady,
+    displayCandles,
+    supertrendData,
+    selectedIndicators,
   ]);
 
   // ============================================
@@ -808,25 +1083,25 @@ export default function NiftySpotChart() {
   // ============================================
 
   return (
-    <section className="w-full rounded-xl border border-slate-800 bg-[#111C2B] p-4 shadow-lg">
+    <section className="w-full rounded-xl border border-slate-200 bg-white p-4 shadow-lg">
 
       {/* HEADER */}
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
 
         <div>
-          <h2 className="text-lg font-bold text-white">
+          <h2 className="text-lg font-bold text-slate-900">
             NIFTY 50 — LIVE CHART
           </h2>
 
-          <p className="mt-1 text-xs text-slate-400">
+          <p className="mt-1 text-xs text-slate-600">
             Zerodha Kite Connect · Historical + Live Spot
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
 
-          <span className="text-xs font-semibold text-cyan-400">
+          <span className="text-xs font-semibold text-sky-600">
             IST (UTC+5:30)
           </span>
 
@@ -835,16 +1110,16 @@ export default function NiftySpotChart() {
             <span
               className={`h-2 w-2 rounded-full ${
                 streamConnected
-                  ? "bg-green-400"
-                  : "bg-amber-400"
+                  ? "bg-green-500"
+                  : "bg-amber-500"
               }`}
             />
 
             <span
               className={`text-xs ${
                 streamConnected
-                  ? "text-green-400"
-                  : "text-amber-400"
+                  ? "text-green-600"
+                  : "text-amber-600"
               }`}
             >
               {streamConnected
@@ -864,11 +1139,11 @@ export default function NiftySpotChart() {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
 
         <div>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-600">
             Latest Available Price
           </p>
 
-          <p className="text-2xl font-bold text-white">
+          <p className="text-2xl font-bold text-slate-900">
             {lastPrice !== null
               ? Number(lastPrice).toLocaleString(
                   "en-IN",
@@ -883,7 +1158,7 @@ export default function NiftySpotChart() {
 
         <div className="flex flex-wrap items-center gap-2">
 
-          <div className="flex gap-1 rounded-lg bg-[#0B1422] p-1">
+          <div className="flex gap-1 rounded-lg bg-slate-100 p-1">
 
             {TIMEFRAMES.map((item) => (
               <button
@@ -891,8 +1166,8 @@ export default function NiftySpotChart() {
                 onClick={() => setTimeframe(item.value)}
                 className={`rounded-md px-3 py-2 text-xs font-semibold transition ${
                   timeframe === item.value
-                    ? "bg-cyan-500 text-slate-950"
-                    : "text-slate-400 hover:bg-slate-700 hover:text-white"
+                    ? "bg-sky-500 text-white"
+                    : "text-slate-600 hover:bg-slate-200 hover:text-slate-900"
                 }`}
               >
                 {item.label}
@@ -907,8 +1182,8 @@ export default function NiftySpotChart() {
             }
             className={`rounded-lg border px-3 py-2 text-xs font-semibold transition ${
               settingsOpen
-                ? "border-cyan-400 bg-cyan-500 text-slate-950"
-                : "border-slate-700 bg-[#0B1422] text-white hover:border-cyan-400"
+                ? "border-sky-500 bg-sky-500 text-white"
+                : "border-slate-300 bg-white text-slate-800 hover:border-sky-500"
             }`}
           >
             <span className="mr-1">⚙</span>
@@ -921,10 +1196,10 @@ export default function NiftySpotChart() {
       {/* INDICATOR SETTINGS */}
 
       {settingsOpen && (
-        <div className="mb-4 rounded-lg border border-slate-700 bg-[#0B1422] p-4">
+        <div className="mb-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
 
           <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-sm font-bold text-white">
+            <h3 className="text-sm font-bold text-slate-900">
               Chart Indicators
             </h3>
 
@@ -943,10 +1218,10 @@ export default function NiftySpotChart() {
               return (
                 <label
                   key={indicator.id}
-                  className="flex cursor-pointer items-center justify-between gap-2 rounded-lg border border-slate-800 bg-[#111C2B] px-3 py-3"
+                  className="flex cursor-pointer items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 py-3"
                 >
 
-                  <span className="flex items-center gap-2 text-xs font-semibold text-slate-200">
+                  <span className="flex items-center gap-2 text-xs font-semibold text-slate-800">
 
                     <span
                       className="h-2.5 w-2.5 rounded-full"
@@ -968,7 +1243,7 @@ export default function NiftySpotChart() {
                         event.target.checked
                       )
                     }
-                    className="h-4 w-4 accent-cyan-400"
+                    className="h-4 w-4 accent-sky-500"
                   />
 
                 </label>
@@ -987,7 +1262,7 @@ export default function NiftySpotChart() {
               onClick={() =>
                 setSelectedIndicators(DEFAULT_INDICATORS)
               }
-              className="rounded-md border border-slate-700 px-3 py-2 text-xs text-slate-300 hover:bg-slate-800"
+              className="rounded-md border border-slate-300 px-3 py-2 text-xs text-slate-700 hover:bg-slate-100"
             >
               Reset Defaults
             </button>
@@ -997,6 +1272,11 @@ export default function NiftySpotChart() {
           <p className="mt-3 text-xs text-slate-500">
             ICA always uses confirmed 5-minute candles and resets
             at the start of each NSE trading session.
+          </p>
+
+          <p className="mt-2 text-xs text-slate-500">
+            Supertrend: ATR {SUPERTREND_PERIOD}, Multiplier{" "}
+            {SUPERTREND_MULTIPLIER}
           </p>
 
         </div>
@@ -1020,23 +1300,32 @@ export default function NiftySpotChart() {
 
       </div>
 
-      {/* CHART */}
+      {/* CHART + SHADING CANVAS */}
 
-      <div className="relative">
+      <div
+        ref={chartWrapperRef}
+        className="relative rounded-lg border border-slate-200 bg-white"
+      >
 
         <div
           ref={chartContainerRef}
-          className="h-[420px] w-full overflow-hidden"
+          className="h-[420px] w-full overflow-hidden rounded-lg"
+        />
+
+        <canvas
+          ref={shadingCanvasRef}
+          className="pointer-events-none absolute inset-0 z-10 h-full w-full rounded-lg"
+          aria-hidden="true"
         />
 
         {loading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-[#111C2B]/80 text-sm text-slate-400">
+          <div className="absolute inset-0 z-20 flex items-center justify-center rounded-lg bg-white/90 text-sm text-slate-600">
             Loading NIFTY historical candles...
           </div>
         )}
 
         {error && (
-          <div className="absolute inset-0 flex items-center justify-center bg-[#111C2B]/90 text-sm text-rose-400">
+          <div className="absolute inset-0 z-20 flex items-center justify-center rounded-lg bg-white/95 text-sm text-rose-600">
             {error}
           </div>
         )}
@@ -1045,7 +1334,7 @@ export default function NiftySpotChart() {
 
       {/* FOOTER */}
 
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 pt-3 text-xs text-slate-500">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 pt-3 text-xs text-slate-500">
 
         <span>
           NSE:NIFTY 50 · Token: 256265
@@ -1055,20 +1344,20 @@ export default function NiftySpotChart() {
           Interval: {selectedTimeframe?.label}
         </span>
 
-        <span className="text-cyan-400">
+        <span className="text-sky-600">
           Market Time: IST
         </span>
 
       </div>
 
       {liveStatus?.error && (
-        <p className="mt-2 text-xs text-rose-400">
+        <p className="mt-2 text-xs text-rose-600">
           WebSocket: {liveStatus.error}
         </p>
       )}
 
       {!hasLiveTick && streamConnected && (
-        <p className="mt-2 text-xs text-amber-400">
+        <p className="mt-2 text-xs text-amber-600">
           WebSocket connected. Waiting for the next market tick.
         </p>
       )}

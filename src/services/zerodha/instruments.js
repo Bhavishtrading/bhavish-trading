@@ -1,10 +1,22 @@
-import { getKiteClient } from "./client";
-import { getAccessToken } from "./session";
+
+import { getKiteClient } from "./client.js";
 
 const globalCache = globalThis;
 
 // =====================================================
-// NFO CACHE
+// ACCESS TOKEN RESOLVER
+// =====================================================
+async function resolveAccessToken(accessTokenOverride) {
+  if (accessTokenOverride) {
+    return accessTokenOverride;
+  }
+
+  const { getAccessToken } = await import("./session.js");
+  return getAccessToken();
+}
+
+// =====================================================
+// GLOBAL INSTRUMENT CACHE
 // =====================================================
 if (!globalCache.nfoInstrumentCache) {
   globalCache.nfoInstrumentCache = {
@@ -13,9 +25,6 @@ if (!globalCache.nfoInstrumentCache) {
   };
 }
 
-// =====================================================
-// MCX CACHE
-// =====================================================
 if (!globalCache.mcxInstrumentCache) {
   globalCache.mcxInstrumentCache = {
     instruments: null,
@@ -26,7 +35,7 @@ if (!globalCache.mcxInstrumentCache) {
 // =====================================================
 // GET ALL NFO INSTRUMENTS
 // =====================================================
-export async function getAllNFOInstruments() {
+export async function getAllNFOInstruments(accessTokenOverride) {
   if (globalCache.nfoInstrumentCache.instruments) {
     console.log(
       "Using Cached NFO Instruments:",
@@ -36,31 +45,23 @@ export async function getAllNFOInstruments() {
     return globalCache.nfoInstrumentCache.instruments;
   }
 
-  const accessToken = await getAccessToken();
+  const accessToken = await resolveAccessToken(accessTokenOverride);
 
   if (!accessToken) {
     throw new Error("Zerodha access token not found");
   }
 
   const kite = getKiteClient();
-
   kite.setAccessToken(accessToken);
 
   console.log("Downloading Zerodha NFO Instruments...");
 
-  const instruments =
-    await kite.getInstruments(["NFO"]);
+  const instruments = await kite.getInstruments(["NFO"]);
 
-  globalCache.nfoInstrumentCache.instruments =
-    instruments;
+  globalCache.nfoInstrumentCache.instruments = instruments;
+  globalCache.nfoInstrumentCache.loadedAt = new Date();
 
-  globalCache.nfoInstrumentCache.loadedAt =
-    new Date();
-
-  console.log(
-    "Downloaded NFO:",
-    instruments.length
-  );
+  console.log("Downloaded NFO:", instruments.length);
 
   return instruments;
 }
@@ -78,31 +79,23 @@ export async function getAllMCXInstruments() {
     return globalCache.mcxInstrumentCache.instruments;
   }
 
-  const accessToken = await getAccessToken();
+  const accessToken = await resolveAccessToken();
 
   if (!accessToken) {
     throw new Error("Zerodha access token not found");
   }
 
   const kite = getKiteClient();
-
   kite.setAccessToken(accessToken);
 
   console.log("Downloading Zerodha MCX Instruments...");
 
-  const instruments =
-    await kite.getInstruments(["MCX"]);
+  const instruments = await kite.getInstruments(["MCX"]);
 
-  globalCache.mcxInstrumentCache.instruments =
-    instruments;
+  globalCache.mcxInstrumentCache.instruments = instruments;
+  globalCache.mcxInstrumentCache.loadedAt = new Date();
 
-  globalCache.mcxInstrumentCache.loadedAt =
-    new Date();
-
-  console.log(
-    "Downloaded MCX:",
-    instruments.length
-  );
+  console.log("Downloaded MCX:", instruments.length);
 
   return instruments;
 }
@@ -111,24 +104,17 @@ export async function getAllMCXInstruments() {
 // GET NIFTY OPTIONS
 // =====================================================
 export async function getNiftyOptions() {
-  const instruments =
-    await getAllNFOInstruments();
+  const instruments = await getAllNFOInstruments();
 
-  const options =
-    instruments.filter(
-      (item) =>
-        item.name === "NIFTY" &&
-        item.segment === "NFO-OPT" &&
-        (
-          item.instrument_type === "CE" ||
-          item.instrument_type === "PE"
-        )
-    );
-
-  console.log(
-    "NIFTY OPTION COUNT:",
-    options.length
+  const options = instruments.filter(
+    (item) =>
+      item.name === "NIFTY" &&
+      item.segment === "NFO-OPT" &&
+      (item.instrument_type === "CE" ||
+        item.instrument_type === "PE")
   );
+
+  console.log("NIFTY OPTION COUNT:", options.length);
 
   return options;
 }
@@ -136,22 +122,17 @@ export async function getNiftyOptions() {
 // =====================================================
 // GET NIFTY FUTURES
 // =====================================================
-export async function getNiftyFutures() {
-  const instruments =
-    await getAllNFOInstruments();
+export async function getNiftyFutures(accessTokenOverride) {
+  const instruments = await getAllNFOInstruments(accessTokenOverride);
 
-  const futures =
-    instruments.filter(
-      (item) =>
-        item.name === "NIFTY" &&
-        item.segment === "NFO-FUT" &&
-        item.instrument_type === "FUT"
-    );
-
-  console.log(
-    "NIFTY FUTURES COUNT:",
-    futures.length
+  const futures = instruments.filter(
+    (item) =>
+      item.name === "NIFTY" &&
+      item.segment === "NFO-FUT" &&
+      item.instrument_type === "FUT"
   );
+
+  console.log("NIFTY FUTURES COUNT:", futures.length);
 
   return futures;
 }
@@ -159,96 +140,59 @@ export async function getNiftyFutures() {
 // =====================================================
 // GET CURRENT NIFTY FUTURE
 // =====================================================
-export async function getCurrentNiftyFuture() {
-  const futures =
-    await getNiftyFutures();
+export async function getCurrentNiftyFuture(accessTokenOverride) {
+  const futures = await getNiftyFutures(accessTokenOverride);
 
   if (!futures.length) {
-    throw new Error(
-      "No NIFTY futures contracts found"
-    );
+    throw new Error("No NIFTY futures contracts found");
   }
 
-  const today =
-    new Date();
+  const today = new Date();
 
-  const todayDate =
-    new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate()
-    );
+  const todayDate = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate()
+  );
 
-  const activeContracts =
-    futures
-      .filter((item) => {
-        if (!item.expiry) {
-          return false;
-        }
+  const activeContracts = futures
+    .filter((item) => {
+      if (!item.expiry) {
+        return false;
+      }
 
-        const expiry =
-          new Date(item.expiry);
+      const expiry = new Date(item.expiry);
 
-        const expiryDate =
-          new Date(
-            expiry.getFullYear(),
-            expiry.getMonth(),
-            expiry.getDate()
-          );
+      const expiryDate = new Date(
+        expiry.getFullYear(),
+        expiry.getMonth(),
+        expiry.getDate()
+      );
 
-        return expiryDate >= todayDate;
-      })
-      .sort((a, b) => {
-        return (
-          new Date(a.expiry) -
-          new Date(b.expiry)
-        );
-      });
+      return expiryDate >= todayDate;
+    })
+    .sort((a, b) => new Date(a.expiry) - new Date(b.expiry));
 
   if (!activeContracts.length) {
-    throw new Error(
-      "No active NIFTY futures contract found"
-    );
+    throw new Error("No active NIFTY futures contract found");
   }
 
-  const currentContract =
-    activeContracts[0];
+  const currentContract = activeContracts[0];
 
-  console.log(
-    "======================================"
-  );
-
-  console.log(
-    "CURRENT NIFTY FUTURE"
-  );
-
-  console.log(
-    "======================================"
-  );
+  console.log("======================================");
+  console.log("CURRENT NIFTY FUTURE");
+  console.log("======================================");
 
   console.log({
-    tradingsymbol:
-      currentContract.tradingsymbol,
-
-    instrument_token:
-      currentContract.instrument_token,
-
-    expiry:
-      currentContract.expiry,
-
-    lot_size:
-      currentContract.lot_size,
-
-    segment:
-      currentContract.segment,
-
-    instrument_type:
-      currentContract.instrument_type,
+    tradingsymbol: currentContract.tradingsymbol,
+    instrument_token: currentContract.instrument_token,
+    expiry: currentContract.expiry,
+    lot_size: currentContract.lot_size,
+    segment: currentContract.segment,
+    instrument_type: currentContract.instrument_type,
   });
 
-  console.log(
-    "======================================"
-  );
+  console.log("======================================");
 
   return currentContract;
 }
@@ -257,80 +201,50 @@ export async function getCurrentNiftyFuture() {
 // GET CRUDE OIL FUTURES
 // =====================================================
 export async function getCrudeOilFutures() {
-  const instruments =
-    await getAllMCXInstruments();
+  const instruments = await getAllMCXInstruments();
 
-  const crude =
-    instruments.filter(
-      (item) =>
-        item.name === "CRUDEOIL" &&
-        item.segment === "MCX-FUT"
-    );
-
-  console.log(
-    "CRUDE FUTURES COUNT:",
-    crude.length
+  const crude = instruments.filter(
+    (item) =>
+      item.name === "CRUDEOIL" &&
+      item.segment === "MCX-FUT"
   );
+
+  console.log("CRUDE FUTURES COUNT:", crude.length);
 
   return crude;
 }
+
 // =====================================================
 // GET CRUDE OIL OPTIONS
 // =====================================================
 export async function getCrudeOilOptions() {
-  const instruments =
-    await getAllMCXInstruments();
+  const instruments = await getAllMCXInstruments();
 
-  const crudeOptions =
-    instruments.filter(
-      (item) =>
-        item.name === "CRUDEOIL" &&
-        item.segment === "MCX-OPT" &&
-        (item.instrument_type === "CE" ||
-          item.instrument_type === "PE")
-    );
-
-  console.log(
-    "======================================"
+  const crudeOptions = instruments.filter(
+    (item) =>
+      item.name === "CRUDEOIL" &&
+      item.segment === "MCX-OPT" &&
+      (item.instrument_type === "CE" ||
+        item.instrument_type === "PE")
   );
 
-  console.log(
-    "CRUDE OPTIONS COUNT:",
-    crudeOptions.length
-  );
-
-  console.log(
-    "CRUDE OPTIONS SAMPLE:"
-  );
+  console.log("======================================");
+  console.log("CRUDE OPTIONS COUNT:", crudeOptions.length);
+  console.log("CRUDE OPTIONS SAMPLE:");
 
   console.log(
     crudeOptions.slice(0, 10).map((item) => ({
-      tradingsymbol:
-        item.tradingsymbol,
-
-      expiry:
-        item.expiry,
-
-      strike:
-        item.strike,
-
-      instrument_token:
-        item.instrument_token,
-
-      instrument_type:
-        item.instrument_type,
-
-      lot_size:
-        item.lot_size,
-
-      segment:
-        item.segment,
+      tradingsymbol: item.tradingsymbol,
+      expiry: item.expiry,
+      strike: item.strike,
+      instrument_token: item.instrument_token,
+      instrument_type: item.instrument_type,
+      lot_size: item.lot_size,
+      segment: item.segment,
     }))
   );
 
-  console.log(
-    "======================================"
-  );
+  console.log("======================================");
 
   return crudeOptions;
 }
@@ -339,86 +253,55 @@ export async function getCrudeOilOptions() {
 // GET CURRENT CRUDE OIL FUTURE
 // =====================================================
 export async function getCurrentCrudeFuture() {
-  const crude =
-    await getCrudeOilFutures();
+  const crude = await getCrudeOilFutures();
 
   if (!crude.length) {
-    throw new Error(
-      "No CRUDEOIL futures contracts found"
-    );
+    throw new Error("No CRUDEOIL futures contracts found");
   }
 
-  const today =
-    new Date();
+  const today = new Date();
 
-  const todayDate =
-    new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate()
-    );
+  const todayDate = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate()
+  );
 
-  const activeContracts =
-    crude
-      .filter((item) => {
-        if (!item.expiry) {
-          return false;
-        }
+  const activeContracts = crude
+    .filter((item) => {
+      if (!item.expiry) {
+        return false;
+      }
 
-        const expiry =
-          new Date(item.expiry);
+      const expiry = new Date(item.expiry);
 
-        const expiryDate =
-          new Date(
-            expiry.getFullYear(),
-            expiry.getMonth(),
-            expiry.getDate()
-          );
+      const expiryDate = new Date(
+        expiry.getFullYear(),
+        expiry.getMonth(),
+        expiry.getDate()
+      );
 
-        return expiryDate >= todayDate;
-      })
-      .sort((a, b) => {
-        return (
-          new Date(a.expiry) -
-          new Date(b.expiry)
-        );
-      });
+      return expiryDate >= todayDate;
+    })
+    .sort((a, b) => new Date(a.expiry) - new Date(b.expiry));
 
   if (!activeContracts.length) {
-    throw new Error(
-      "No active CRUDEOIL futures contract found"
-    );
+    throw new Error("No active CRUDEOIL futures contract found");
   }
 
-  const currentContract =
-    activeContracts[0];
+  const currentContract = activeContracts[0];
 
-  console.log(
-    "======================================"
-  );
-
-  console.log(
-    "CURRENT CRUDE CONTRACT"
-  );
-
-  console.log(
-    "======================================"
-  );
+  console.log("======================================");
+  console.log("CURRENT CRUDE CONTRACT");
+  console.log("======================================");
 
   console.log({
-    tradingsymbol:
-      currentContract.tradingsymbol,
-
-    instrument_token:
-      currentContract.instrument_token,
-
-    expiry:
-      currentContract.expiry,
+    tradingsymbol: currentContract.tradingsymbol,
+    instrument_token: currentContract.instrument_token,
+    expiry: currentContract.expiry,
   });
 
-  console.log(
-    "======================================"
-  );
+  console.log("======================================");
 
   return currentContract;
 }
@@ -427,55 +310,31 @@ export async function getCurrentCrudeFuture() {
 // GET SILVER MINI FUTURES
 // =====================================================
 export async function getSilverFutures() {
-  const instruments =
-    await getAllMCXInstruments();
+  const instruments = await getAllMCXInstruments();
 
-  const silverMini =
-    instruments.filter(
-      (item) =>
-        item.name === "SILVERM" &&
-        item.segment === "MCX-FUT" &&
-        item.instrument_type === "FUT"
-    );
-
-  console.log(
-    "======================================"
+  const silverMini = instruments.filter(
+    (item) =>
+      item.name === "SILVERM" &&
+      item.segment === "MCX-FUT" &&
+      item.instrument_type === "FUT"
   );
 
-  console.log(
-    "SILVER MINI FUTURES COUNT:",
-    silverMini.length
-  );
-
-  console.log(
-    "SILVER MINI CONTRACTS:"
-  );
+  console.log("======================================");
+  console.log("SILVER MINI FUTURES COUNT:", silverMini.length);
+  console.log("SILVER MINI CONTRACTS:");
 
   console.log(
     silverMini.map((item) => ({
-      tradingsymbol:
-        item.tradingsymbol,
-
-      expiry:
-        item.expiry,
-
-      instrument_token:
-        item.instrument_token,
-
-      lot_size:
-        item.lot_size,
-
-      segment:
-        item.segment,
-
-      instrument_type:
-        item.instrument_type,
+      tradingsymbol: item.tradingsymbol,
+      expiry: item.expiry,
+      instrument_token: item.instrument_token,
+      lot_size: item.lot_size,
+      segment: item.segment,
+      instrument_type: item.instrument_type,
     }))
   );
 
-  console.log(
-    "======================================"
-  );
+  console.log("======================================");
 
   return silverMini;
 }
@@ -484,95 +343,58 @@ export async function getSilverFutures() {
 // GET CURRENT SILVER MINI FUTURE
 // =====================================================
 export async function getCurrentSilverFuture() {
-  const silverMini =
-    await getSilverFutures();
+  const silverMini = await getSilverFutures();
 
   if (!silverMini.length) {
-    throw new Error(
-      "No SILVERM futures contracts found"
-    );
+    throw new Error("No SILVERM futures contracts found");
   }
 
-  const today =
-    new Date();
+  const today = new Date();
 
-  const todayDate =
-    new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate()
-    );
+  const todayDate = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate()
+  );
 
-  const activeContracts =
-    silverMini
-      .filter((item) => {
-        if (!item.expiry) {
-          return false;
-        }
+  const activeContracts = silverMini
+    .filter((item) => {
+      if (!item.expiry) {
+        return false;
+      }
 
-        const expiry =
-          new Date(item.expiry);
+      const expiry = new Date(item.expiry);
 
-        const expiryDate =
-          new Date(
-            expiry.getFullYear(),
-            expiry.getMonth(),
-            expiry.getDate()
-          );
+      const expiryDate = new Date(
+        expiry.getFullYear(),
+        expiry.getMonth(),
+        expiry.getDate()
+      );
 
-        return expiryDate >= todayDate;
-      })
-      .sort((a, b) => {
-        return (
-          new Date(a.expiry) -
-          new Date(b.expiry)
-        );
-      });
+      return expiryDate >= todayDate;
+    })
+    .sort((a, b) => new Date(a.expiry) - new Date(b.expiry));
 
   if (!activeContracts.length) {
-    throw new Error(
-      "No active SILVERM futures contract found"
-    );
+    throw new Error("No active SILVERM futures contract found");
   }
 
-  const currentContract =
-    activeContracts[0];
+  const currentContract = activeContracts[0];
 
-  console.log(
-    "======================================"
-  );
-
-  console.log(
-    "CURRENT SILVER MINI CONTRACT"
-  );
-
-  console.log(
-    "======================================"
-  );
+  console.log("======================================");
+  console.log("CURRENT SILVER MINI CONTRACT");
+  console.log("======================================");
 
   console.log({
-    tradingsymbol:
-      currentContract.tradingsymbol,
-
-    instrument_token:
-      currentContract.instrument_token,
-
-    expiry:
-      currentContract.expiry,
-
-    lot_size:
-      currentContract.lot_size,
-
-    segment:
-      currentContract.segment,
-
-    instrument_type:
-      currentContract.instrument_type,
+    tradingsymbol: currentContract.tradingsymbol,
+    instrument_token: currentContract.instrument_token,
+    expiry: currentContract.expiry,
+    lot_size: currentContract.lot_size,
+    segment: currentContract.segment,
+    instrument_type: currentContract.instrument_type,
   });
 
-  console.log(
-    "======================================"
-  );
+  console.log("======================================");
 
   return currentContract;
 }
@@ -581,15 +403,9 @@ export async function getCurrentSilverFuture() {
 // CLEAR INSTRUMENT CACHE
 // =====================================================
 export function clearInstrumentCache() {
-  globalCache.nfoInstrumentCache.instruments =
-    null;
+  globalCache.nfoInstrumentCache.instruments = null;
+  globalCache.nfoInstrumentCache.loadedAt = null;
 
-  globalCache.nfoInstrumentCache.loadedAt =
-    null;
-
-  globalCache.mcxInstrumentCache.instruments =
-    null;
-
-  globalCache.mcxInstrumentCache.loadedAt =
-    null;
+  globalCache.mcxInstrumentCache.instruments = null;
+  globalCache.mcxInstrumentCache.loadedAt = null;
 }

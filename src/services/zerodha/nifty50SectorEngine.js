@@ -698,7 +698,7 @@ export async function getNifty50SectorData() {
         0
       )
       .toFixed(2)
-  );
+  )
 
 
   // ====================================================

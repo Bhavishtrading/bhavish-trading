@@ -1,13 +1,31 @@
+
 export function calculateATR(quotes, period = 14) {
-  if (!quotes || quotes.length < period + 1) {
+  if (!Array.isArray(quotes) || quotes.length < period + 1) {
+    return null;
+  }
+
+  const candles = quotes.map((q) => ({
+    high: Number(q.high),
+    low: Number(q.low),
+    close: Number(q.close),
+  }));
+
+  if (
+    candles.some(
+      (c) =>
+        !Number.isFinite(c.high) ||
+        !Number.isFinite(c.low) ||
+        !Number.isFinite(c.close)
+    )
+  ) {
     return null;
   }
 
   const trueRanges = [];
 
-  for (let i = 1; i < quotes.length; i++) {
-    const current = quotes[i];
-    const previous = quotes[i - 1];
+  for (let i = 1; i < candles.length; i++) {
+    const current = candles[i];
+    const previous = candles[i - 1];
 
     const tr = Math.max(
       current.high - current.low,
@@ -18,21 +36,26 @@ export function calculateATR(quotes, period = 14) {
     trueRanges.push(tr);
   }
 
-  const recentTR = trueRanges.slice(-period);
+  if (trueRanges.length < period) return null;
 
-  const atr =
-    recentTR.reduce((sum, value) => sum + value, 0) / period;
+  // Initial ATR = average of first period TR values
+  let atr =
+    trueRanges.slice(0, period).reduce(
+      (sum, value) => sum + value,
+      0
+    ) / period;
+
+  // Wilder smoothing
+  for (let i = period; i < trueRanges.length; i++) {
+    atr = ((atr * (period - 1)) + trueRanges[i]) / period;
+  }
 
   let volatility = "Normal";
-
-  if (atr >= 80) {
-    volatility = "High";
-  } else if (atr <= 30) {
-    volatility = "Low";
-  }
 
   return {
     atr: Number(atr.toFixed(2)),
     volatility,
+    period,
+    method: "Wilder",
   };
 }
