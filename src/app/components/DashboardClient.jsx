@@ -1,4 +1,3 @@
-
 "use client";
 
 import AISignalCard from "./AISignalCard";
@@ -23,6 +22,9 @@ import Nifty50LiveStocks from "./Nifty50LiveStocks";
 import VixIntelligenceCard from "./VixIntelligenceCard";
 import NiftySpotChart from "@/components/charts/NiftySpotChart";
 import NiftyFutureIntelligence from "./NiftyFutureIntelligence";
+import Nifty50EMA20Scanner from "./Nifty50EMA20Scanner";
+import Nifty50EMA9Scanner from "./Nifty50EMA9Scanner";
+import Nifty50VWAPScanner from "./Nifty50VWAPScanner";
 
 export default function DashboardClient() {
   const [data, setData] = useState(null);
@@ -334,10 +336,10 @@ export default function DashboardClient() {
           </div>
 
           {/* ====================================== */}
-{/* NIFTY FUTURES INTELLIGENCE */}
-{/* ====================================== */}
+          {/* NIFTY FUTURES INTELLIGENCE */}
+          {/* ====================================== */}
 
-<NiftyFutureIntelligence />
+          <NiftyFutureIntelligence />
 
           {/* ====================================== */}
           {/* BHAVISH VIX INTELLIGENCE */}
@@ -1001,13 +1003,35 @@ export default function DashboardClient() {
           </div>
 
           {/* ====================================== */}
+          {/* NIFTY 50 EMA20 LIVE SCANNER */}
+          {/* ====================================== */}
+
+          <div className="mt-6 w-full min-w-0">
+            <Nifty50EMA20Scanner />
+          </div>
+
+          {/* ====================================== */}
+          {/* NIFTY 50 EMA9 LIVE SCANNER */}
+          {/* ====================================== */}
+
+          <div className="mt-6 w-full min-w-0">
+            <Nifty50EMA9Scanner />
+          </div>
+
+          {/* ====================================== */}
+          {/* NIFTY 50 VWAP LIVE SCANNER */}
+          {/* ====================================== */}
+
+          <div className="mt-6 w-full min-w-0">
+            <Nifty50VWAPScanner />
+          </div>
+
+          {/* ====================================== */}
           {/* NIFTY 50 LIVE STOCKS */}
           {/* ====================================== */}
 
           <div className="mt-6 w-full min-w-0">
-
             <Nifty50LiveStocks />
-
           </div>
 
           {/* ====================================== */}

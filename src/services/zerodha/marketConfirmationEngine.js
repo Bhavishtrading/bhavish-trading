@@ -398,22 +398,58 @@ export function analyzeMarketConfirmation({
   // --------------------------------------------------
   // 10. ENTRY STATUS
   // --------------------------------------------------
-
-  // Breakout acceptance and retest confirmation
-  // will be implemented separately.
+  // --------------------------------------------------
+  // 10. ENTRY CANDIDATE LOGIC
+  // --------------------------------------------------
 
   let entryStatus = "WAITING";
 
-  if (
-    score.direction === "SIDEWAYS" ||
-    oiAnomaly ||
-    !emaSignal ||
-    !vwapSignal ||
-    !adx ||
-    !macd
-  ) {
+  const adxValue = Number(adx?.adx);
+  const rsiValue = Number(rsi);
+  const macdValue = Number(macd?.histogram);
+
+  const validADX = Number.isFinite(adxValue);
+  const validRSI = Number.isFinite(rsiValue);
+  const validMACD = Number.isFinite(macdValue);
+
+  const bullishCandidate =
+    score.direction === "BULLISH" &&
+    emaSignal === "BULLISH" &&
+    vwapSignal === "BULLISH" &&
+    macdSignal === "BULLISH" &&
+    validADX &&
+    adxValue >= 20 &&
+    validRSI &&
+    rsiValue >= 50 &&
+    validMACD &&
+    macdValue > 0 &&
+    !oiAnomaly &&
+    structureSignal !== "BEARISH" &&
+    participationSignal !== "BEARISH";
+
+  const bearishCandidate =
+    score.direction === "BEARISH" &&
+    emaSignal === "BEARISH" &&
+    vwapSignal === "BEARISH" &&
+    macdSignal === "BEARISH" &&
+    validADX &&
+    adxValue >= 20 &&
+    validRSI &&
+    rsiValue <= 50 &&
+    validMACD &&
+    macdValue < 0 &&
+    !oiAnomaly &&
+    structureSignal !== "BULLISH" &&
+    participationSignal !== "BULLISH";
+
+  if (oiAnomaly || score.direction === "SIDEWAYS") {
     entryStatus = "AVOID";
+  } else if (bullishCandidate) {
+    entryStatus = "BUY CE CANDIDATE";
+  } else if (bearishCandidate) {
+    entryStatus = "BUY PE CANDIDATE";
   }
+
 
   // --------------------------------------------------
   // 11. CANDLE TIMESTAMP ALIGNMENT

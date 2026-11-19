@@ -1,10 +1,31 @@
+
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import HighWeightageLiveChart from "./HighWeightageLiveChart";
 
 
 // ======================================================
 // NIFTY 50 LIVE STOCKS
+// ======================================================
+
+// ======================================================
+// HIGH WEIGHTAGE STOCKS
+// ======================================================
+
+const HIGH_WEIGHTAGE_SYMBOLS = [
+  "HDFCBANK",
+  "ICICIBANK",
+  "RELIANCE",
+  "BHARTIARTL",
+  "LT",
+  "SBIN",
+  "INFY",
+];
+
+
+// ======================================================
+// MAIN COMPONENT
 // ======================================================
 
 export default function Nifty50LiveStocks() {
@@ -17,6 +38,7 @@ export default function Nifty50LiveStocks() {
   const [search, setSearch] = useState("");
 
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [totalPointsContribution, setTotalPointsContribution] = useState(null);
 
 
   // ====================================================
@@ -55,6 +77,14 @@ export default function Nifty50LiveStocks() {
 
 
       setStocks(liveStocks);
+
+      setTotalPointsContribution(
+        result.totalPointsContribution !== null &&
+        result.totalPointsContribution !== undefined &&
+        Number.isFinite(Number(result.totalPointsContribution))
+          ? Number(result.totalPointsContribution)
+          : null
+      );
 
       setLastUpdated(
         new Date()
@@ -99,6 +129,108 @@ export default function Nifty50LiveStocks() {
       clearInterval(interval);
 
   }, []);
+
+
+  // ====================================================
+  // HIGH WEIGHTAGE STOCK SCORE
+  // ====================================================
+
+  const highWeightageResult =
+    useMemo(() => {
+
+      const selectedStocks =
+        HIGH_WEIGHTAGE_SYMBOLS.map(
+          (symbol) =>
+            stocks.find(
+              (stock) =>
+                stock.symbol === symbol
+            )
+        );
+
+
+      // ------------------------------------------------
+      // CHECK ALL 7 STOCKS
+      // ------------------------------------------------
+
+      const availableStocks =
+        selectedStocks.filter(Boolean);
+
+
+      if (
+        availableStocks.length !==
+        HIGH_WEIGHTAGE_SYMBOLS.length
+      ) {
+
+        return {
+          score: null,
+          count: availableStocks.length,
+        };
+      }
+
+
+      // ------------------------------------------------
+      // CHECK VALID POINTS CONTRIBUTION
+      // ------------------------------------------------
+
+      const allValid =
+        selectedStocks.every(
+          (stock) =>
+            stock.pointsContribution !== null &&
+            stock.pointsContribution !== undefined &&
+            Number.isFinite(
+              Number(stock.pointsContribution)
+            )
+        );
+
+
+      if (!allValid) {
+
+        return {
+          score: null,
+          count: availableStocks.length,
+        };
+      }
+
+
+      // ------------------------------------------------
+      // ADD 7 STOCKS POINTS CONTRIBUTION
+      // ------------------------------------------------
+
+      const score =
+        selectedStocks.reduce(
+          (sum, stock) =>
+            sum +
+            Number(stock.pointsContribution),
+          0
+        );
+
+
+      return {
+        score: Number(score.toFixed(2)),
+        count: availableStocks.length,
+      };
+
+    }, [
+      stocks,
+    ]);
+
+
+  const highWeightageScore =
+    highWeightageResult.score;
+
+
+  // ====================================================
+  // HIGH WEIGHTAGE MARKET STATUS
+  // ====================================================
+
+  const highWeightageStatus =
+    highWeightageScore === null
+      ? "WAITING FOR STOCK DATA"
+      : highWeightageScore > 0.05
+        ? "INDEX PUSHING UP"
+        : highWeightageScore < -0.05
+          ? "INDEX DRAGGING DOWN"
+          : "NEUTRAL";
 
 
   // ====================================================
@@ -500,43 +632,126 @@ export default function Nifty50LiveStocks() {
 
           {/* MARKET BREADTH */}
 
-          <div className="flex items-center gap-4 text-sm">
+          <div className="flex flex-col gap-3">
 
-            <div>
-              <span className="text-slate-500">
-                Advances
-              </span>
+            {/* ADVANCES / DECLINES / UNCHANGED */}
 
-              <span className="ml-2 text-green-400 font-bold">
-                {advances}
-              </span>
+            <div className="flex flex-wrap items-center gap-4 text-sm">
+
+              <div>
+                <span className="text-slate-500">
+                  Advances
+                </span>
+
+                <span className="ml-2 text-green-400 font-bold">
+                  {advances}
+                </span>
+              </div>
+
+
+              <div>
+                <span className="text-slate-500">
+                  Declines
+                </span>
+
+                <span className="ml-2 text-red-400 font-bold">
+                  {declines}
+                </span>
+              </div>
+
+
+              <div>
+                <span className="text-slate-500">
+                  Unchanged
+                </span>
+
+                <span className="ml-2 text-slate-300 font-bold">
+                  {unchanged}
+                </span>
+              </div>
+
             </div>
 
 
-            <div>
-              <span className="text-slate-500">
-                Declines
-              </span>
+            {/* ==================================================
+                CONTRIBUTION SCORE CARDS
+            ================================================== */}
 
-              <span className="ml-2 text-red-400 font-bold">
-                {declines}
-              </span>
-            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
 
-            <div>
-              <span className="text-slate-500">
-                Unchanged
-              </span>
+              {/* HIGH WEIGHTAGE STOCK SCORE */}
 
-              <span className="ml-2 text-slate-300 font-bold">
-                {unchanged}
-              </span>
+              <div className="rounded-lg border border-cyan-500/30 bg-cyan-500/5 px-4 py-3">
+
+                <div className="text-xs text-cyan-300 font-semibold">
+                  HIGH WEIGHTAGE STOCK SCORE
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 mt-1">
+
+                  <span
+                    className={`text-xl font-bold ${getChangeClass(highWeightageScore)}`}
+                  >
+
+                    {highWeightageScore === null
+                      ? "-"
+                      : `${highWeightageScore > 0 ? "+" : ""}${formatNumber(highWeightageScore, 2)} pts`}
+
+                  </span>
+
+                  <span
+                    className={`text-xs font-semibold ${getChangeClass(highWeightageScore)}`}
+                  >
+                    {highWeightageStatus}
+                  </span>
+
+                </div>
+
+                <div className="text-xs text-slate-500 mt-1">
+                  7 stocks · 43.83% combined weight
+
+                  {highWeightageScore === null &&
+                    ` · ${highWeightageResult.count}/7 available`}
+                </div>
+
+              </div>
+
+
+              {/* ALL 50 STOCKS CONTRIBUTION */}
+
+              <div className="rounded-lg border border-slate-700 bg-slate-800/50 px-4 py-3">
+
+                <div className="text-xs text-slate-400 font-semibold">
+                  ALL 50 STOCKS CONTRIBUTION
+                </div>
+
+                <div
+                  className={`text-xl font-bold mt-1 ${getChangeClass(totalPointsContribution)}`}
+                >
+
+                  {totalPointsContribution === null
+                    ? "-"
+                    : `${totalPointsContribution > 0 ? "+" : ""}${formatNumber(totalPointsContribution, 2)} pts`}
+
+                </div>
+
+                <div className="text-xs text-slate-500 mt-1">
+                  Total estimated NIFTY points contribution
+                </div>
+
+              </div>
+
             </div>
 
           </div>
 
         </div>
+                {/* HIGH WEIGHTAGE LIVE CHART */}
+        <HighWeightageLiveChart
+          score={highWeightageScore}
+          stocks={stocks}
+        />
 
 
         {/* ==================================================
@@ -697,6 +912,10 @@ export default function Nifty50LiveStocks() {
 
               <th className="px-3 py-3 text-right text-slate-500 font-semibold text-xs">
                 CONTRIBUTION
+              </th>
+
+              <th className="px-3 py-3 text-right text-slate-500 font-semibold text-xs">
+                POINTS CONTRIBUTION
               </th>
 
               <th className="px-3 py-3 text-center text-slate-500 font-semibold text-xs">
@@ -893,6 +1112,26 @@ export default function Nifty50LiveStocks() {
                     </td>
 
 
+                    {/* POINTS CONTRIBUTION */}
+
+                    <td
+                      className={`px-3 py-3 text-right font-semibold ${getChangeClass(
+                        stock.pointsContribution
+                      )}`}
+                    >
+
+                      {Number(stock.pointsContribution) > 0
+                        ? "+"
+                        : ""}
+
+                      {formatNumber(
+                        stock.pointsContribution,
+                        2
+                      )}
+
+                    </td>
+
+
                     {/* TREND */}
 
                     <td
@@ -921,7 +1160,7 @@ export default function Nifty50LiveStocks() {
               <tr>
 
                 <td
-                  colSpan={13}
+                  colSpan={14}
                   className="px-4 py-10 text-center text-slate-500"
                 >
                   No stocks found.

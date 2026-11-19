@@ -24,3 +24,13 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+/* EMA20 and EMA9 Scanner Smooth Animation */
+.ema20-track,
+.ema9-track {
+  animation-duration: 180s !important;
+  animation-timing-function: linear !important;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}

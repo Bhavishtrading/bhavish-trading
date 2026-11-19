@@ -1,3 +1,4 @@
+
 // ======================================================
 // NIFTY 50 SECTOR ENGINE
 // ======================================================
@@ -94,11 +95,13 @@ async function getNifty50Quotes() {
   // Build NSE symbols
   // ----------------------------------------------------
 
-  const instruments =
-    NIFTY50_STOCKS.map(
+  const instruments = [
+    ...NIFTY50_STOCKS.map(
       (stock) =>
         `NSE:${stock.symbol}`
-    );
+    ),
+    "NSE:NIFTY 50",
+  ];
 
 
   // ----------------------------------------------------
@@ -146,7 +149,8 @@ async function getNifty50Quotes() {
 
 function calculateStockData(
   stock,
-  quote
+  quote,
+  niftyPreviousClose
 ) {
 
   // ----------------------------------------------------
@@ -263,6 +267,24 @@ function calculateStockData(
 
 
   // ====================================================
+  // NIFTY POINTS CONTRIBUTION
+  // ====================================================
+  //
+  // Convert weighted contribution percentage
+  // into approximate NIFTY index points.
+  //
+  // ====================================================
+
+  const pointsContribution =
+    niftyPreviousClose > 0
+      ? (
+          weightedContribution *
+          niftyPreviousClose
+        ) / 100
+      : 0;
+
+
+  // ====================================================
   // STOCK DATA
   // ====================================================
 
@@ -349,6 +371,16 @@ function calculateStockData(
     weightedContribution:
       Number(
         weightedContribution.toFixed(4)
+      ),
+
+
+    // --------------------------------------------------
+    // NIFTY POINTS CONTRIBUTION
+    // --------------------------------------------------
+
+    pointsContribution:
+      Number(
+        pointsContribution.toFixed(2)
       ),
   };
 }
@@ -614,6 +646,30 @@ export async function getNifty50SectorData() {
 
 
   // ====================================================
+  // NIFTY INDEX PREVIOUS CLOSE
+  // ====================================================
+
+  const niftyIndexQuote =
+    quotes["NSE:NIFTY 50"];
+
+  const niftyPreviousClose =
+    Number(
+      niftyIndexQuote?.ohlc?.close || 0
+    );
+
+  const niftyCurrentPrice =
+    Number(
+      niftyIndexQuote?.last_price || 0
+    );
+
+  if (niftyPreviousClose <= 0) {
+    throw new Error(
+      "NIFTY 50 Index previous close unavailable"
+    );
+  }
+
+
+  // ====================================================
   // CALCULATE EACH STOCK
   // ====================================================
 
@@ -633,7 +689,8 @@ export async function getNifty50SectorData() {
 
         return calculateStockData(
           stock,
-          quote
+          quote,
+          niftyPreviousClose
         );
       }
     );
@@ -658,6 +715,19 @@ export async function getNifty50SectorData() {
       (sum, stock) =>
         sum +
         stock.weightedContribution,
+      0
+    );
+
+
+  // ====================================================
+  // TOTAL NIFTY POINTS CONTRIBUTION
+  // ====================================================
+
+  const totalPointsContribution =
+    stocks.reduce(
+      (sum, stock) =>
+        sum +
+        stock.pointsContribution,
       0
     );
 
@@ -768,6 +838,21 @@ export async function getNifty50SectorData() {
   );
 
   console.log(
+    "NIFTY Previous Close:",
+    niftyPreviousClose
+  );
+
+  console.log(
+    "NIFTY Current Price:",
+    niftyCurrentPrice
+  );
+
+  console.log(
+    "Total Points Contribution:",
+    totalPointsContribution
+  );
+
+  console.log(
     "Overall Score:",
     overallSectorScore
   );
@@ -803,9 +888,18 @@ export async function getNifty50SectorData() {
 
     overallSectorScore,
 
+    niftyPreviousClose,
+
+    niftyCurrentPrice,
+
     totalContribution:
       Number(
         totalContribution.toFixed(4)
+      ),
+
+    totalPointsContribution:
+      Number(
+        totalPointsContribution.toFixed(2)
       ),
 
     weightTotal:

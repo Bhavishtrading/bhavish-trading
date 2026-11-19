@@ -18,6 +18,7 @@
     "lightweight-charts": "^5.3.0",
     "macaddress": "^0.5.4",
     "next": "16.2.10",
+    "nodemailer": "^10.6.0",
     "otplib": "^13.4.1",
     "public-ip": "^8.0.0",
     "react": "19.2.4",
